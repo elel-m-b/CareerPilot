@@ -9,29 +9,28 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <header class="header-wrapper glass-card">
+    <header class="header-wrapper">
       <div class="header-left">
         <button class="mobile-toggle" (click)="toggleSidebar.emit()" aria-label="Toggle Menu">
-          ☰
+          Menu
         </button>
-        <div class="header-tagline">
-          <span>AI-Powered Resume Analysis & ATS Optimization</span>
+        <div class="header-tagline text-mono">
+          <span>SYSTEM // RESUME ANALYZER ENGINE</span>
         </div>
       </div>
 
       <div class="header-right">
-        <!-- Quick Upload Action -->
+        <!-- Upload Quick Action -->
         <button class="btn btn-primary btn-sm" (click)="openUploadModal.emit()">
-          <span>⚡</span> Analyze CV
+          Upload & Analyze Resume
         </button>
 
-        <!-- Theme Toggle Switch -->
-        <button class="theme-toggle-btn" (click)="themeService.toggleTheme()" title="Toggle Theme Mode">
-          <span *ngIf="(themeService.theme$ | async) === 'dark'">☀️</span>
-          <span *ngIf="(themeService.theme$ | async) === 'light'">🌙</span>
+        <!-- Theme Toggle -->
+        <button class="theme-toggle-btn" (click)="themeService.toggleTheme()" title="Toggle Dark/Light Mode">
+          <span class="text-mono">{{ (themeService.theme$ | async) === 'dark' ? 'LIGHT' : 'DARK' }}</span>
         </button>
 
-        <!-- User Dropdown Link -->
+        <!-- User Info Link -->
         <a routerLink="/profile" class="user-header-link" *ngIf="authService.currentUser$ | async as user">
           <div class="header-avatar">
             {{ user.username.substring(0, 2).toUpperCase() }}
@@ -43,92 +42,93 @@ import { RouterModule } from '@angular/router';
   `,
   styles: [`
     .header-wrapper {
-      height: 70px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 28px;
-      border-radius: 0;
+      padding: 0 24px;
       border-bottom: 1px solid var(--border-color);
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      background: var(--bg-secondary);
+      background-color: var(--bg-sidebar);
       width: 100%;
     }
+
     .header-left {
       display: flex;
       align-items: center;
       gap: 16px;
     }
+
     .mobile-toggle {
       display: none;
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      font-size: 1.2rem;
-      padding: 6px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .header-tagline {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-muted);
-    }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-    }
-    .theme-toggle-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
       color: var(--text-main);
-      font-size: 1.1rem;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
+    }
+
+    .header-tagline {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .header-right {
       display: flex;
       align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
+      gap: 16px;
+    }
+
+    .theme-toggle-btn {
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
 
       &:hover {
-        border-color: var(--border-focus);
-        background: var(--bg-hover);
+        border-color: var(--text-main);
       }
     }
+
     .user-header-link {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       text-decoration: none;
       color: var(--text-main);
       padding: 4px 8px;
-      border-radius: 10px;
-      transition: background 0.2s ease;
+      border-radius: var(--radius-sm);
+      transition: background 0.15s ease;
 
       &:hover {
         background: var(--bg-surface);
       }
     }
+
     .header-avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: var(--primary-gradient);
-      color: #ffffff;
-      font-size: 0.8rem;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: var(--text-main);
+      color: var(--text-inverse);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
     }
+
     .user-header-name {
-      font-size: 0.875rem;
-      font-weight: 600;
+      font-size: 0.85rem;
+      font-weight: 500;
     }
 
     @media (max-width: 768px) {

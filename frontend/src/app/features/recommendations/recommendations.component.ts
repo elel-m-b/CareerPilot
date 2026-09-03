@@ -17,34 +17,31 @@ interface RecWithDoc extends Recommendation {
   template: `
     <div class="recs-page animate-fade-in">
       <!-- Header Banner -->
-      <div class="glass-card recs-banner">
+      <div class="card recs-banner">
         <div class="banner-content">
-          <span class="badge badge-warning">AI Career Recommendations</span>
-          <h1>Actionable Resume Improvements</h1>
-          <p>
-            Aggregated feedback derived from your analyzed resumes. Focus on high-priority items to boost ATS ranking.
+          <div class="badge badge-neutral text-mono">FEEDBACK ENGINE</div>
+          <h1>Candidate Recommendations</h1>
+          <p class="text-secondary">
+            Aggregated improvement points extracted from your resume evaluations. Address high-priority entries to optimize ATS parsing compliance.
           </p>
-        </div>
-        <div class="banner-illustration">
-          <img src="/assets/illustrations/illustration-robot.png" alt="Recommendations Robot" />
         </div>
       </div>
 
       <!-- Filters Row -->
-      <div class="glass-card filter-card">
+      <div class="card filter-card flex-between">
         <div class="filter-group">
-          <label>Filter Priority:</label>
+          <label class="text-mono">PRIORITY:</label>
           <div class="filter-pills">
-            <button class="pill-btn" [class.active]="selectedPriority === 'ALL'" (click)="selectedPriority = 'ALL'">All</button>
-            <button class="pill-btn critical" [class.active]="selectedPriority === 'Critical'" (click)="selectedPriority = 'Critical'">Critical</button>
-            <button class="pill-btn important" [class.active]="selectedPriority === 'Important'" (click)="selectedPriority = 'Important'">Important</button>
-            <button class="pill-btn suggested" [class.active]="selectedPriority === 'Suggested'" (click)="selectedPriority = 'Suggested'">Suggested</button>
+            <button class="pill-btn text-mono" [class.active]="selectedPriority === 'ALL'" (click)="selectedPriority = 'ALL'">ALL</button>
+            <button class="pill-btn text-mono" [class.active]="selectedPriority === 'HIGH'" (click)="selectedPriority = 'HIGH'">HIGH</button>
+            <button class="pill-btn text-mono" [class.active]="selectedPriority === 'MEDIUM'" (click)="selectedPriority = 'MEDIUM'">MED</button>
+            <button class="pill-btn text-mono" [class.active]="selectedPriority === 'LOW'" (click)="selectedPriority = 'LOW'">LOW</button>
           </div>
         </div>
 
         <div class="filter-group">
-          <label>Category:</label>
-          <select [(ngModel)]="selectedCategory" class="category-select">
+          <label class="text-mono">CATEGORY:</label>
+          <select [(ngModel)]="selectedCategory" class="category-select text-mono">
             <option value="ALL">All Categories</option>
             <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
           </select>
@@ -54,29 +51,27 @@ interface RecWithDoc extends Recommendation {
       <!-- Recommendations Grid -->
       <div class="recs-grid" *ngIf="filteredRecs.length > 0; else emptyState">
         <div
-          class="glass-card rec-card"
+          class="card rec-card"
           *ngFor="let rec of filteredRecs"
-          [ngClass]="'border-' + rec.priority.toLowerCase()"
         >
-          <div class="rec-top">
+          <div class="rec-top flex-between">
             <span class="badge" [ngClass]="getPriorityBadgeClass(rec.priority)">{{ rec.priority }}</span>
-            <span class="badge badge-info">{{ rec.category }}</span>
+            <span class="badge badge-neutral text-mono">{{ rec.category }}</span>
           </div>
 
           <p class="rec-text">{{ rec.message }}</p>
 
-          <div class="rec-footer">
-            <span class="doc-origin">📄 {{ rec.documentName }}</span>
-            <a [routerLink]="['/analysis', rec.analysisId]" class="view-analysis-link">Open Report →</a>
+          <div class="rec-footer flex-between text-mono">
+            <span class="doc-origin text-muted">{{ rec.documentName }}</span>
+            <a [routerLink]="['/analysis', rec.analysisId]" class="view-analysis-link">Report →</a>
           </div>
         </div>
       </div>
 
       <ng-template #emptyState>
-        <div class="glass-card empty-container">
-          <div class="empty-icon">💡</div>
-          <h3>No Recommendations Match Filter</h3>
-          <p>Try resetting priority or category filters, or analyze more resumes.</p>
+        <div class="card empty-container">
+          <h3>No Recommendations Found</h3>
+          <p class="text-secondary">Try adjusting filters or upload a new resume for analysis.</p>
         </div>
       </ng-template>
     </div>
@@ -85,104 +80,119 @@ interface RecWithDoc extends Recommendation {
     .recs-page {
       display: flex;
       flex-direction: column;
-      gap: 24px;
-    }
-    .recs-banner {
-      padding: 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
-
-      .banner-content {
-        max-width: 600px;
-        h1 { font-size: 1.7rem; margin-top: 8px; color: var(--text-main); }
-        p { font-size: 0.925rem; color: var(--text-secondary); margin-top: 6px; line-height: 1.6; }
-      }
-      .banner-illustration img { max-height: 130px; object-fit: contain; }
-    }
-    .filter-card {
-      padding: 18px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       gap: 20px;
+    }
+
+    .recs-banner {
+      padding: 24px;
+
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+
+      p {
+        font-size: 0.875rem;
+        margin-top: 4px;
+      }
+    }
+
+    .filter-card {
+      padding: 14px 20px;
+      gap: 16px;
       flex-wrap: wrap;
     }
+
     .filter-group {
       display: flex;
       align-items: center;
-      gap: 12px;
-      label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+      gap: 10px;
+
+      label {
+        font-size: 0.725rem;
+        color: var(--text-muted);
+      }
     }
+
     .filter-pills {
       display: flex;
-      gap: 6px;
+      gap: 4px;
     }
+
     .pill-btn {
-      padding: 6px 14px;
-      border-radius: 8px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border-color);
       background: var(--bg-surface);
       color: var(--text-secondary);
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.725rem;
       cursor: pointer;
 
       &.active {
-        background: var(--primary-color);
-        color: #ffffff;
-        border-color: var(--primary-color);
+        background: var(--text-main);
+        color: var(--text-inverse);
+        border-color: var(--text-main);
+        font-weight: 600;
       }
     }
+
     .category-select {
-      padding: 8px 14px;
-      border-radius: 8px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border-color);
       background: var(--bg-surface);
       color: var(--text-main);
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       outline: none;
     }
+
     .recs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
     }
+
     .rec-card {
-      padding: 24px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+    }
 
-      &.border-critical { border-left: 5px solid var(--error-color); }
-      &.border-important { border-left: 5px solid var(--warning-color); }
-      &.border-suggested { border-left: 5px solid var(--info-color); }
+    .rec-text {
+      font-size: 0.85rem;
+      line-height: 1.5;
     }
-    .rec-top { display: flex; gap: 8px; }
-    .rec-text { font-size: 0.925rem; color: var(--text-main); line-height: 1.55; }
+
     .rec-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: auto;
-      padding-top: 12px;
+      padding-top: 10px;
       border-top: 1px solid var(--border-color);
-      font-size: 0.8rem;
-      .doc-origin { color: var(--text-muted); font-weight: 500; }
-      .view-analysis-link { color: var(--primary-color); font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
+      font-size: 0.75rem;
+
+      .view-analysis-link {
+        font-weight: 600;
+      }
     }
+
     .empty-container {
-      padding: 60px 20px;
+      padding: 48px 24px;
       text-align: center;
-      .empty-icon { font-size: 3rem; margin-bottom: 12px; }
-      h3 { font-size: 1.3rem; color: var(--text-main); }
-      p { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; }
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+
+      h3 {
+        font-size: 1.25rem;
+      }
     }
 
     @media (max-width: 768px) {
-      .banner-illustration { display: none; }
-      .filter-card { flex-direction: column; align-items: flex-start; }
+      .filter-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   `]
 })
@@ -222,16 +232,16 @@ export class RecommendationsComponent implements OnInit {
 
   get filteredRecs(): RecWithDoc[] {
     return this.allRecs.filter(r => {
-      const matchP = this.selectedPriority === 'ALL' || r.priority.toLowerCase() === this.selectedPriority.toLowerCase();
+      const matchP = this.selectedPriority === 'ALL' || r.priority.toUpperCase() === this.selectedPriority.toUpperCase();
       const matchC = this.selectedCategory === 'ALL' || r.category === this.selectedCategory;
       return matchP && matchC;
     });
   }
 
   getPriorityBadgeClass(priority: string): string {
-    const p = priority.toLowerCase();
-    if (p === 'critical') return 'badge-error';
-    if (p === 'important') return 'badge-warning';
-    return 'badge-info';
+    const p = priority.toUpperCase();
+    if (p === 'HIGH' || p === 'CRITICAL') return 'badge-high';
+    if (p === 'MEDIUM' || p === 'IMPORTANT') return 'badge-medium';
+    return 'badge-low';
   }
 }

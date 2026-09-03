@@ -13,65 +13,68 @@ import { ResumeAnalysis } from '../../../core/models/analysis.model';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="resume-detail-page animate-fade-in" *ngIf="resume">
-      <div class="detail-header">
-        <button class="btn btn-secondary btn-sm" routerLink="/my-resumes">← Back to Resumes</button>
-        <div class="header-title-box">
-          <h2>{{ resume.originalFilename }}</h2>
-          <span class="badge badge-info">{{ resume.fileType }}</span>
-          <span class="file-size-tag">{{ (resume.fileSize / 1024).toFixed(0) }} KB</span>
+      <div class="detail-header flex-between">
+        <div>
+          <button class="btn btn-outline btn-sm mb-2" routerLink="/my-resumes">← Back to Resumes</button>
+          <div class="header-title-box">
+            <h2 class="text-mono">{{ resume.originalFilename }}</h2>
+            <span class="badge badge-neutral text-mono">{{ resume.fileType }}</span>
+            <span class="text-mono text-muted">{{ (resume.fileSize / 1024).toFixed(0) }} KB</span>
+          </div>
         </div>
+        <button class="btn btn-primary" (click)="triggerAnalysis()">
+          Run Deterministic Analysis
+        </button>
       </div>
 
       <div class="detail-grid">
         <!-- Extracted Text Card -->
-        <div class="glass-card text-card">
-          <div class="card-title-row">
-            <h3>Extracted Resume Content</h3>
-            <button class="btn btn-primary btn-sm" (click)="triggerAnalysis()">
-              <span>⚡</span> Run Analysis
-            </button>
+        <div class="card text-card">
+          <div class="card-title-row flex-between">
+            <h3>Extracted Text Content</h3>
+            <span class="badge badge-neutral text-mono">PARSED</span>
           </div>
           <div class="text-content-box">
-            <pre *ngIf="resume.extractedText">{{ resume.extractedText }}</pre>
-            <div *ngIf="!resume.extractedText" class="no-text">No text extracted from this file.</div>
+            <pre *ngIf="resume.extractedText" class="text-mono">{{ resume.extractedText }}</pre>
+            <div *ngIf="!resume.extractedText" class="no-text text-muted">No text extracted from document.</div>
           </div>
         </div>
 
-        <!-- History & Info Sidebar Card -->
-        <div class="glass-card side-info-card">
-          <h3>File Information</h3>
+        <!-- History & Meta Sidebar Card -->
+        <div class="card side-info-card">
+          <h3>File Metadata</h3>
           <div class="info-list">
-            <div class="info-item">
-              <span class="label">Uploaded On:</span>
-              <span class="value">{{ resume.uploadedAt | date:'medium' }}</span>
+            <div class="info-item flex-between text-mono">
+              <span class="label text-muted">Uploaded:</span>
+              <span class="value">{{ resume.uploadedAt | date:'yyyy-MM-dd HH:mm' }}</span>
             </div>
-            <div class="info-item">
-              <span class="label">Last Updated:</span>
-              <span class="value">{{ resume.updatedAt | date:'medium' }}</span>
+            <div class="info-item flex-between text-mono">
+              <span class="label text-muted">Updated:</span>
+              <span class="value">{{ resume.updatedAt | date:'yyyy-MM-dd HH:mm' }}</span>
             </div>
           </div>
 
-          <h3 class="history-title">Analysis History</h3>
+          <h3 class="history-title">Evaluation Runs</h3>
           <div class="history-list" *ngIf="analyses.length > 0; else noAnalyses">
             <div
               *ngFor="let item of analyses"
-              class="history-item"
+              class="history-item flex-between"
               [routerLink]="['/analysis', item.id]"
             >
-              <div class="score-pill" [style.background]="getScoreColor(item.overallScore)">
+              <div class="score-pill">
                 {{ item.overallScore }}
               </div>
-              <div class="history-details">
-                <div class="history-date">{{ item.analyzedAt | date:'short' }}</div>
-                <div class="history-sub">ATS: {{ item.atsScore }}%</div>
+              <div class="history-details text-mono">
+                <div class="history-date">{{ item.analyzedAt | date:'yyyy-MM-dd HH:mm' }}</div>
+                <div class="history-sub text-muted">ATS Score: {{ item.atsScore }}%</div>
               </div>
-              <span class="arrow">→</span>
+              <span class="arrow text-mono">→</span>
             </div>
           </div>
           <ng-template #noAnalyses>
             <div class="no-analyses-box">
-              <p>No analysis performed yet for this document.</p>
-              <button class="btn btn-primary btn-sm" (click)="triggerAnalysis()">Run AI Analysis</button>
+              <p class="text-muted">No evaluation runs recorded for this file.</p>
+              <button class="btn btn-primary btn-sm" (click)="triggerAnalysis()">Run Analysis</button>
             </div>
           </ng-template>
         </div>
@@ -82,111 +85,136 @@ import { ResumeAnalysis } from '../../../core/models/analysis.model';
     .resume-detail-page {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
-    .detail-header {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+
+    .mb-2 {
+      margin-bottom: 8px;
     }
+
     .header-title-box {
       display: flex;
       align-items: center;
       gap: 12px;
-      h2 { font-size: 1.6rem; color: var(--text-main); }
-      .file-size-tag { font-size: 0.85rem; color: var(--text-muted); }
+
+      h2 {
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
     }
+
     .detail-grid {
       display: grid;
       grid-template-columns: 1fr 340px;
-      gap: 24px;
+      gap: 20px;
     }
+
     .text-card {
-      padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 16px;
+
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
     }
-    .card-title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      h3 { font-size: 1.15rem; color: var(--text-main); }
-    }
+
     .text-content-box {
-      background: var(--bg-surface);
+      background-color: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 20px;
-      max-height: 520px;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      max-height: 540px;
       overflow-y: auto;
+
       pre {
-        font-family: 'Inter', sans-serif;
         white-space: pre-wrap;
-        font-size: 0.9rem;
-        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        color: var(--text-main);
         line-height: 1.6;
       }
-      .no-text { color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 40px; }
+
+      .no-text {
+        text-align: center;
+        padding: 40px;
+        font-size: 0.875rem;
+      }
     }
+
     .side-info-card {
-      padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 16px;
-      h3 { font-size: 1.1rem; color: var(--text-main); }
-      .history-title { margin-top: 12px; }
+
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .history-title {
+        margin-top: 8px;
+      }
     }
+
     .info-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+
+      .info-item {
+        font-size: 0.775rem;
+      }
     }
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      .label { color: var(--text-muted); }
-      .value { color: var(--text-main); font-weight: 500; }
-    }
+
     .history-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
+
     .history-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      background: var(--bg-surface);
-      border-radius: 10px;
+      padding: 10px 12px;
+      background-color: var(--bg-surface);
       border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
       cursor: pointer;
-      &:hover { border-color: var(--primary-color); }
+      transition: all 0.15s ease;
+
+      &:hover {
+        border-color: var(--text-main);
+        background-color: var(--bg-surface-hover);
+      }
+
+      .history-date {
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .history-sub {
+        font-size: 0.725rem;
+      }
     }
-    .score-pill {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      color: #ffffff;
-      font-weight: 800;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .history-details { flex: 1; }
-    .history-date { font-size: 0.8rem; font-weight: 600; color: var(--text-main); }
-    .history-sub { font-size: 0.75rem; color: var(--text-muted); }
+
     .no-analyses-box {
       text-align: center;
-      padding: 20px 10px;
-      p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+      padding: 24px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+
+      p {
+        font-size: 0.85rem;
+      }
     }
 
     @media (max-width: 900px) {
-      .detail-grid { grid-template-columns: 1fr; }
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
@@ -226,7 +254,7 @@ export class ResumeDetailComponent implements OnInit {
 
   triggerAnalysis(): void {
     if (!this.resume) return;
-    this.toastService.info('Analyzing resume...');
+    this.toastService.info('Running resume analysis...');
     this.analysisService.analyzeResume(this.resume.id).subscribe({
       next: (res) => {
         this.toastService.success('Analysis completed!');
@@ -234,12 +262,5 @@ export class ResumeDetailComponent implements OnInit {
       },
       error: () => this.toastService.error('Analysis failed.')
     });
-  }
-
-  getScoreColor(score: number): string {
-    if (score >= 85) return '#10b981';
-    if (score >= 70) return '#3b82f6';
-    if (score >= 50) return '#f59e0b';
-    return '#ef4444';
   }
 }

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ResumeService } from '../../../core/services/resume.service';
 import { AnalysisService } from '../../../core/services/analysis.service';
@@ -11,22 +11,16 @@ import { Router } from '@angular/router';
   imports: [CommonModule],
   template: `
     <div class="modal-overlay" (click)="onBackdropClick($event)">
-      <div class="glass-card modal-content animate-fade-in" (click)="$event.stopPropagation()">
+      <div class="modal-content card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div>
-            <h2>Upload Resume for AI Analysis</h2>
-            <p class="modal-subtitle">Upload your CV in PDF or DOCX format to calculate ATS score & recommendations.</p>
+            <h3>Upload & Analyze Resume</h3>
+            <p class="modal-subtitle">Upload a PDF or DOCX file to extract candidate data & calculate ATS metrics.</p>
           </div>
           <button class="close-btn" (click)="close.emit()">×</button>
         </div>
 
         <div class="modal-body">
-          <!-- Illustration banner -->
-          <div class="upload-illustration-banner">
-            <img src="/assets/illustrations/illustration-target.png" alt="Resume target illustration" />
-          </div>
-
-          <!-- Drag and Drop Zone -->
           <div
             class="drop-zone"
             [class.dragging]="isDragging"
@@ -42,24 +36,23 @@ import { Router } from '@angular/router';
               (change)="onFileSelected($event)"
               hidden
             />
-            <div class="drop-icon">📄</div>
             <div class="drop-text" *ngIf="!selectedFile">
-              <span class="highlight">Click to upload</span> or drag and drop your resume
-              <div class="file-hint">Supports PDF, DOCX (Max 10MB)</div>
+              <div class="file-icon-box">FILE</div>
+              <span class="highlight">Select file</span> or drag & drop document here
+              <div class="file-hint">PDF or DOCX (Max 10MB)</div>
             </div>
             <div class="selected-file-info" *ngIf="selectedFile">
-              <div class="file-name">{{ selectedFile.name }}</div>
-              <div class="file-size">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</div>
-              <button class="remove-file-btn" (click)="removeFile($event)">Remove file</button>
+              <div class="file-name text-mono">{{ selectedFile.name }}</div>
+              <div class="file-size text-muted">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</div>
+              <button class="remove-file-btn" (click)="removeFile($event)">Remove File</button>
             </div>
           </div>
 
-          <!-- Loading state during upload & analysis -->
           <div class="upload-status" *ngIf="isUploading || isAnalyzing">
-            <div class="spinner"></div>
-            <div class="status-text">
-              <span *ngIf="isUploading">Uploading resume to server...</span>
-              <span *ngIf="isAnalyzing">Analyzing resume structure & calculating ATS score...</span>
+            <div class="status-indicator"></div>
+            <div class="status-text text-mono">
+              <span *ngIf="isUploading">UPLOADING RESUME DOCUMENT...</span>
+              <span *ngIf="isAnalyzing">PARSING SECTIONS & COMPUTING SCORES...</span>
             </div>
           </div>
         </div>
@@ -71,7 +64,7 @@ import { Router } from '@angular/router';
             (click)="submitUploadAndAnalyze()"
             [disabled]="!selectedFile || isUploading || isAnalyzing"
           >
-            Upload & Analyze
+            Run Analysis
           </button>
         </div>
       </div>
@@ -80,134 +73,154 @@ import { Router } from '@angular/router';
   styles: [`
     .modal-content {
       width: 100%;
-      max-width: 560px;
-      padding: 28px;
+      max-width: 520px;
+      padding: 24px;
     }
+
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 20px;
 
-      h2 {
-        font-size: 1.35rem;
-        color: var(--text-main);
+      h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
       }
+
       .modal-subtitle {
-        font-size: 0.85rem;
+        font-size: 0.8125rem;
         color: var(--text-secondary);
         margin-top: 4px;
       }
     }
+
     .close-btn {
       background: transparent;
       border: none;
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       color: var(--text-muted);
       cursor: pointer;
       line-height: 1;
-      &:hover { color: var(--text-main); }
-    }
-    .upload-illustration-banner {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      img {
-        max-height: 140px;
-        object-fit: contain;
+
+      &:hover {
+        color: var(--text-main);
       }
     }
+
     .drop-zone {
-      border: 2px dashed var(--border-color);
-      border-radius: 14px;
-      padding: 30px 20px;
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 32px 20px;
       text-align: center;
       cursor: pointer;
-      background: var(--bg-surface);
-      transition: all 0.25s ease;
+      background-color: var(--bg-surface);
+      transition: all 0.15s ease;
 
       &:hover, &.dragging {
-        border-color: var(--primary-color);
-        background: rgba(99, 102, 241, 0.05);
+        border-color: var(--text-main);
+        background-color: var(--bg-surface-hover);
       }
     }
-    .drop-icon {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
+
+    .file-icon-box {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.75rem;
+      width: 44px;
+      height: 36px;
+      margin: 0 auto 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
     }
+
     .drop-text {
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       color: var(--text-secondary);
+
       .highlight {
-        color: var(--primary-color);
+        color: var(--text-main);
         font-weight: 600;
+        text-decoration: underline;
       }
+
       .file-hint {
         font-size: 0.75rem;
+        font-family: var(--font-mono);
         color: var(--text-muted);
-        margin-top: 6px;
+        margin-top: 8px;
       }
     }
+
     .selected-file-info {
       .file-name {
         font-weight: 600;
         color: var(--text-main);
-        font-size: 0.95rem;
+        font-size: 0.9rem;
       }
+
       .file-size {
-        font-size: 0.8rem;
-        color: var(--text-muted);
+        font-size: 0.75rem;
         margin-top: 2px;
       }
+
       .remove-file-btn {
-        margin-top: 10px;
+        margin-top: 12px;
         background: transparent;
         border: none;
-        color: var(--error-color);
-        font-size: 0.8rem;
+        color: #ef4444;
+        font-size: 0.75rem;
         font-weight: 600;
         cursor: pointer;
         text-decoration: underline;
       }
     }
+
     .upload-status {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-top: 18px;
-      padding: 12px 16px;
-      background: var(--bg-surface);
-      border-radius: 10px;
+      gap: 12px;
+      margin-top: 16px;
+      padding: 12px 14px;
+      background-color: var(--bg-surface);
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border-color);
 
-      .spinner {
-        width: 20px;
-        height: 20px;
-        border: 2px solid rgba(99, 102, 241, 0.2);
-        border-top-color: var(--primary-color);
+      .status-indicator {
+        width: 10px;
+        height: 10px;
+        background-color: var(--text-main);
         border-radius: 50%;
-        animation: spin 0.8s linear infinite;
+        animation: pulse 1s infinite alternate;
       }
+
       .status-text {
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: var(--text-secondary);
+        font-size: 0.75rem;
+        color: var(--text-main);
+        letter-spacing: 0.05em;
       }
     }
+
     .modal-footer {
       display: flex;
       justify-content: flex-end;
-      gap: 12px;
+      gap: 10px;
       margin-top: 24px;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+
+    @keyframes pulse {
+      from { opacity: 0.3; }
+      to { opacity: 1; }
     }
   `]
 })
 export class ResumeUploadModalComponent {
   @Output() close = new EventEmitter<void>();
-  @Output() uploaded = new EventEmitter<number>(); // Emits analysisId or resumeId
+  @Output() uploaded = new EventEmitter<number>();
 
   selectedFile: File | null = null;
   isDragging = false;
@@ -221,25 +234,25 @@ export class ResumeUploadModalComponent {
     private router: Router
   ) {}
 
-  onBackdropClick(event: MouseEvent) {
+  onBackdropClick(event: MouseEvent): void {
     if (!this.isUploading && !this.isAnalyzing) {
       this.close.emit();
     }
   }
 
-  onDragOver(event: DragEvent) {
+  onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
     this.isDragging = true;
   }
 
-  onDragLeave(event: DragEvent) {
+  onDragLeave(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
     this.isDragging = false;
   }
 
-  onDrop(event: DragEvent) {
+  onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
     this.isDragging = false;
@@ -249,19 +262,19 @@ export class ResumeUploadModalComponent {
     }
   }
 
-  onFileSelected(event: Event) {
+  onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.validateAndSetFile(input.files[0]);
     }
   }
 
-  removeFile(event: MouseEvent) {
+  removeFile(event: MouseEvent): void {
     event.stopPropagation();
     this.selectedFile = null;
   }
 
-  validateAndSetFile(file: File) {
+  validateAndSetFile(file: File): void {
     const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     const fileName = file.name.toLowerCase();
 
@@ -278,7 +291,7 @@ export class ResumeUploadModalComponent {
     this.selectedFile = file;
   }
 
-  submitUploadAndAnalyze() {
+  submitUploadAndAnalyze(): void {
     if (!this.selectedFile) return;
 
     this.isUploading = true;
@@ -286,7 +299,7 @@ export class ResumeUploadModalComponent {
       next: (resume) => {
         this.isUploading = false;
         this.isAnalyzing = true;
-        this.toastService.success('Resume uploaded successfully. Analyzing content...');
+        this.toastService.success('Resume uploaded. Running deterministic analyzer...');
 
         this.analysisService.analyzeResume(resume.id).subscribe({
           next: (analysis) => {

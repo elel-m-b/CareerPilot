@@ -4,60 +4,46 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AnalysisService } from '../../../core/services/analysis.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Recommendation, ResumeAnalysis } from '../../../core/models/analysis.model';
-import { ScoreCircleComponent } from '../../../shared/components/score-circle/score-circle.component';
-import { ScoreBarComponent } from '../../../shared/components/score-bar/score-bar.component';
 
 @Component({
   selector: 'app-analysis-detail',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    ScoreCircleComponent,
-    ScoreBarComponent
-  ],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="analysis-detail-page animate-fade-in" *ngIf="analysis">
       <!-- Top Action Bar -->
-      <div class="page-top-bar">
-        <button class="btn btn-secondary btn-sm" routerLink="/analysis">← All Reports</button>
+      <div class="page-top-bar flex-between">
+        <button class="btn btn-outline btn-sm" routerLink="/analysis">← Back to All Reports</button>
         <div class="top-actions">
           <button class="btn btn-danger btn-sm" (click)="deleteReport()">Delete Report</button>
         </div>
       </div>
 
       <!-- Overview Header Card -->
-      <div class="glass-card overview-card">
-        <div class="overview-left">
-          <app-score-circle
-            [score]="analysis.overallScore"
-            [size]="170"
-            [showLabel]="true"
-          ></app-score-circle>
+      <div class="card overview-card flex-between">
+        <div class="score-overall-box text-mono">
+          <div class="overall-val">{{ analysis.overallScore }}</div>
+          <div class="overall-label text-muted">OVERALL RATING</div>
         </div>
 
         <div class="overview-info">
           <div class="filename-row">
-            <h2>{{ analysis.originalFilename }}</h2>
-            <span class="analyzed-time">Evaluated on {{ analysis.analyzedAt | date:'medium' }}</span>
+            <h2 class="text-mono">{{ analysis.originalFilename }}</h2>
+            <span class="analyzed-time text-mono text-muted">EVALUATED AT {{ analysis.analyzedAt | date:'yyyy-MM-dd HH:mm' }}</span>
           </div>
 
-          <p class="overview-desc">
-            Your resume was evaluated across 7 core structural and ATS dimensions. Below is the detailed breakdown and actionable feedback.
-          </p>
-
           <div class="key-metrics-pills">
-            <div class="metric-pill">
-              <span class="pill-title">ATS Compatibility</span>
-              <span class="pill-val" [style.color]="getScoreColor(analysis.atsScore)">{{ analysis.atsScore }}%</span>
+            <div class="metric-pill text-mono">
+              <span class="pill-title text-muted">ATS COMPATIBILITY</span>
+              <span class="pill-val">{{ analysis.atsScore }}%</span>
             </div>
-            <div class="metric-pill">
-              <span class="pill-title">Content Quality</span>
-              <span class="pill-val" [style.color]="getScoreColor(analysis.contentScore)">{{ analysis.contentScore }}%</span>
+            <div class="metric-pill text-mono">
+              <span class="pill-title text-muted">CONTENT QUALITY</span>
+              <span class="pill-val">{{ analysis.contentScore }}%</span>
             </div>
-            <div class="metric-pill">
-              <span class="pill-title">Structure & Layout</span>
-              <span class="pill-val" [style.color]="getScoreColor(analysis.structureScore)">{{ analysis.structureScore }}%</span>
+            <div class="metric-pill text-mono">
+              <span class="pill-title text-muted">STRUCTURE</span>
+              <span class="pill-val">{{ analysis.structureScore }}%</span>
             </div>
           </div>
         </div>
@@ -66,51 +52,112 @@ import { ScoreBarComponent } from '../../../shared/components/score-bar/score-ba
       <!-- 2-Column Section: Sub-Scores & Recommendations -->
       <div class="detail-grid">
         <!-- Sub-Scores Column -->
-        <div class="glass-card column-card">
+        <div class="card column-card">
           <h3>Dimension Breakdown</h3>
-          <p class="section-sub">Individual component scores evaluated by the analyzer engine</p>
+          <p class="section-sub text-muted">Component-level scores evaluated by deterministic engine</p>
 
           <div class="score-bars-container">
-            <app-score-bar title="ATS Optimization" [score]="analysis.atsScore"></app-score-bar>
-            <app-score-bar title="Content & Keywords" [score]="analysis.contentScore"></app-score-bar>
-            <app-score-bar title="Structure & Layout" [score]="analysis.structureScore"></app-score-bar>
-            <app-score-bar title="Technical & Soft Skills" [score]="analysis.skillsScore"></app-score-bar>
-            <app-score-bar title="Work Experience" [score]="analysis.experienceScore"></app-score-bar>
-            <app-score-bar title="Education Credentials" [score]="analysis.educationScore"></app-score-bar>
-            <app-score-bar title="Projects & Portfolio" [score]="analysis.projectsScore"></app-score-bar>
+            <div class="bar-row">
+              <div class="bar-label flex-between text-mono">
+                <span>ATS Optimization</span>
+                <span>{{ analysis.atsScore }}/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="analysis.atsScore"></div>
+              </div>
+            </div>
+
+            <div class="bar-row">
+              <div class="bar-label flex-between text-mono">
+                <span>Content & Keywords</span>
+                <span>{{ analysis.contentScore }}/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="analysis.contentScore"></div>
+              </div>
+            </div>
+
+            <div class="bar-row">
+              <div class="bar-label flex-between text-mono">
+                <span>Structure & Formatting</span>
+                <span>{{ analysis.structureScore }}/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="analysis.structureScore"></div>
+              </div>
+            </div>
+
+            <div class="bar-row">
+              <div class="bar-label flex-between text-mono">
+                <span>Technical & Soft Skills</span>
+                <span>{{ analysis.skillsScore }}/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="analysis.skillsScore"></div>
+              </div>
+            </div>
+
+            <div class="bar-row">
+              <div class="bar-label flex-between text-mono">
+                <span>Work Experience</span>
+                <span>{{ analysis.experienceScore }}/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="analysis.experienceScore"></div>
+              </div>
+            </div>
+
+            <div class="bar-row">
+              <div class="bar-label flex-between text-mono">
+                <span>Education Credentials</span>
+                <span>{{ analysis.educationScore }}/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="analysis.educationScore"></div>
+              </div>
+            </div>
+
+            <div class="bar-row">
+              <div class="bar-label flex-between text-mono">
+                <span>Projects & Portfolio</span>
+                <span>{{ analysis.projectsScore }}/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="analysis.projectsScore"></div>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Recommendations Column -->
-        <div class="glass-card column-card">
-          <div class="card-header-row">
+        <div class="card column-card">
+          <div class="card-header-row flex-between">
             <div>
-              <h3>AI Recommendations</h3>
-              <p class="section-sub">Tailored suggestions to improve ATS ranking</p>
+              <h3>Recommendations</h3>
+              <p class="section-sub text-muted">Suggestions to improve ATS score</p>
             </div>
 
-            <!-- Filter tabs -->
             <div class="priority-tabs">
               <button
-                class="tab-btn"
+                class="tab-btn text-mono"
                 [class.active]="activePriority === 'ALL'"
                 (click)="activePriority = 'ALL'"
-              >All ({{ analysis.recommendations.length }})</button>
+              >ALL ({{ analysis.recommendations.length }})</button>
               <button
-                class="tab-btn priority-critical"
-                [class.active]="activePriority === 'Critical'"
-                (click)="activePriority = 'Critical'"
-              >Critical</button>
+                class="tab-btn text-mono"
+                [class.active]="activePriority === 'HIGH'"
+                (click)="activePriority = 'HIGH'"
+              >HIGH</button>
               <button
-                class="tab-btn priority-important"
-                [class.active]="activePriority === 'Important'"
-                (click)="activePriority = 'Important'"
-              >Important</button>
+                class="tab-btn text-mono"
+                [class.active]="activePriority === 'MEDIUM'"
+                (click)="activePriority = 'MEDIUM'"
+              >MED</button>
               <button
-                class="tab-btn priority-suggested"
-                [class.active]="activePriority === 'Suggested'"
-                (click)="activePriority = 'Suggested'"
-              >Suggested</button>
+                class="tab-btn text-mono"
+                [class.active]="activePriority === 'LOW'"
+                (click)="activePriority = 'LOW'"
+              >LOW</button>
             </div>
           </div>
 
@@ -118,39 +165,38 @@ import { ScoreBarComponent } from '../../../shared/components/score-bar/score-ba
             <div
               *ngFor="let rec of filteredRecommendations"
               class="rec-item-card"
-              [ngClass]="'priority-border-' + rec.priority.toLowerCase()"
             >
-              <div class="rec-header">
+              <div class="rec-header flex-between mb-2">
                 <span class="badge" [ngClass]="getPriorityBadgeClass(rec.priority)">
                   {{ rec.priority }}
                 </span>
-                <span class="badge badge-info">{{ rec.category }}</span>
+                <span class="badge badge-neutral text-mono">{{ rec.category }}</span>
               </div>
               <p class="rec-message">{{ rec.message }}</p>
             </div>
           </div>
           <ng-template #noRecs>
-            <div class="no-recs-box">
-              <p>No {{ activePriority !== 'ALL' ? activePriority : '' }} recommendations found!</p>
+            <div class="no-recs-box text-muted">
+              <p>No {{ activePriority !== 'ALL' ? activePriority : '' }} recommendations.</p>
             </div>
           </ng-template>
         </div>
       </div>
 
       <!-- Section Feedback Breakdown -->
-      <div class="glass-card full-width-card" *ngIf="analysis.sections && analysis.sections.length > 0">
-        <h3>Detailed Section Analysis</h3>
-        <p class="section-sub">Specific evaluation and feedback per resume section</p>
+      <div class="card full-width-card" *ngIf="analysis.sections && analysis.sections.length > 0">
+        <h3>Section Evaluation Feedback</h3>
+        <p class="section-sub text-muted">Detailed observations extracted per section</p>
 
         <div class="sections-grid">
           <div *ngFor="let sec of analysis.sections" class="section-box">
-            <div class="section-box-header">
-              <span class="section-type-title">{{ formatSectionType(sec.sectionType) }}</span>
-              <span class="badge" [ngClass]="getScoreBadgeClass(sec.score)">
-                {{ sec.score }}/100
+            <div class="section-box-header flex-between">
+              <span class="section-type-title text-mono">{{ formatSectionType(sec.sectionType) }}</span>
+              <span class="score-pill">
+                {{ sec.score }} / 100
               </span>
             </div>
-            <p class="section-feedback">{{ sec.feedback }}</p>
+            <p class="section-feedback text-secondary">{{ sec.feedback }}</p>
           </div>
         </div>
       </div>
@@ -160,178 +206,220 @@ import { ScoreBarComponent } from '../../../shared/components/score-bar/score-ba
     .analysis-detail-page {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
-    .page-top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+
     .overview-card {
-      padding: 32px;
-      display: flex;
-      align-items: center;
-      gap: 36px;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    }
-    .overview-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      padding: 24px;
+      gap: 32px;
 
-      .filename-row {
-        h2 { font-size: 1.7rem; color: var(--text-main); }
-        .analyzed-time { font-size: 0.8rem; color: var(--text-muted); }
-      }
-      .overview-desc {
-        font-size: 0.925rem;
-        color: var(--text-secondary);
-        line-height: 1.6;
-      }
-    }
-    .key-metrics-pills {
-      display: flex;
-      gap: 16px;
-      margin-top: 8px;
-    }
-    .metric-pill {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-color);
-      padding: 10px 16px;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
+      .score-overall-box {
+        width: 110px;
+        height: 110px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
 
-      .pill-title { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-      .pill-val { font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 800; margin-top: 2px; }
+        .overall-val {
+          font-size: 2.5rem;
+          font-weight: 700;
+          line-height: 1;
+        }
+
+        .overall-label {
+          font-size: 0.625rem;
+          letter-spacing: 0.08em;
+          margin-top: 4px;
+        }
+      }
+
+      .overview-info {
+        flex: 1;
+
+        .filename-row {
+          h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+          }
+          .analyzed-time {
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 2px;
+          }
+        }
+      }
+
+      .key-metrics-pills {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+
+        .metric-pill {
+          background: var(--bg-surface);
+          border: 1px solid var(--border-color);
+          padding: 8px 14px;
+          border-radius: var(--radius-sm);
+          display: flex;
+          flex-direction: column;
+
+          .pill-title {
+            font-size: 0.65rem;
+            letter-spacing: 0.06em;
+          }
+
+          .pill-val {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-top: 2px;
+          }
+        }
+      }
     }
+
     .detail-grid {
       display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 24px;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 20px;
     }
+
     .column-card {
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      h3 { font-size: 1.2rem; color: var(--text-main); }
-    }
-    .section-sub {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: -8px;
-    }
-    .score-bars-container {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .card-header-row {
+      padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-    }
-    .priority-tabs {
-      display: flex;
-      gap: 6px;
-      background: var(--bg-surface);
-      padding: 4px;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 6px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
 
-      &.active {
-        background: var(--bg-secondary);
-        color: var(--text-main);
-        box-shadow: var(--shadow-sm);
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
       }
     }
-    .recs-list {
+
+    .section-sub {
+      font-size: 0.775rem;
+      margin-top: -6px;
+    }
+
+    .score-bars-container {
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin-top: 8px;
-    }
-    .rec-item-card {
-      padding: 14px 16px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
 
-      &.priority-border-critical { border-left: 4px solid var(--error-color); }
-      &.priority-border-important { border-left: 4px solid var(--warning-color); }
-      &.priority-border-suggested { border-left: 4px solid var(--info-color); }
+      .bar-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .bar-label {
+          font-size: 0.775rem;
+        }
+      }
     }
-    .rec-header {
+
+    .priority-tabs {
       display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 4px;
+
+      .tab-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        cursor: pointer;
+
+        &.active {
+          background: var(--text-main);
+          color: var(--text-inverse);
+          border-color: var(--text-main);
+          font-weight: 600;
+        }
+      }
     }
-    .rec-message {
-      font-size: 0.875rem;
-      color: var(--text-main);
-      line-height: 1.5;
-    }
-    .full-width-card {
-      padding: 28px;
+
+    .recs-list {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      h3 { font-size: 1.2rem; color: var(--text-main); }
+      gap: 10px;
+      margin-top: 6px;
     }
+
+    .rec-item-card {
+      padding: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+
+      .rec-message {
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+    }
+
+    .full-width-card {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+    }
+
     .sections-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-      margin-top: 8px;
+      gap: 12px;
     }
+
     .section-box {
-      padding: 16px;
+      padding: 14px;
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
-    }
-    .section-box-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
+      border-radius: var(--radius-md);
 
-      .section-type-title {
-        font-weight: 700;
-        font-size: 0.9rem;
-        color: var(--text-main);
+      .section-box-header {
+        margin-bottom: 8px;
+
+        .section-type-title {
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
+      }
+
+      .section-feedback {
+        font-size: 0.8125rem;
+        line-height: 1.5;
       }
     }
-    .section-feedback {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-    }
+
     .no-recs-box {
-      padding: 30px;
+      padding: 24px;
       text-align: center;
-      color: var(--text-muted);
-      font-size: 0.875rem;
+      font-size: 0.85rem;
     }
 
-    @media (max-width: 960px) {
-      .overview-card { flex-direction: column; text-align: center; }
-      .key-metrics-pills { justify-content: center; }
-      .detail-grid { grid-template-columns: 1fr; }
+    .mb-2 {
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .overview-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
@@ -359,7 +447,7 @@ export class AnalysisDetailComponent implements OnInit {
   get filteredRecommendations(): Recommendation[] {
     if (!this.analysis) return [];
     if (this.activePriority === 'ALL') return this.analysis.recommendations;
-    return this.analysis.recommendations.filter(r => r.priority.toLowerCase() === this.activePriority.toLowerCase());
+    return this.analysis.recommendations.filter(r => r.priority.toUpperCase() === this.activePriority.toUpperCase());
   }
 
   deleteReport(): void {
@@ -375,28 +463,14 @@ export class AnalysisDetailComponent implements OnInit {
     }
   }
 
-  getScoreColor(score: number): string {
-    if (score >= 85) return '#10b981';
-    if (score >= 70) return '#3b82f6';
-    if (score >= 50) return '#f59e0b';
-    return '#ef4444';
-  }
-
-  getScoreBadgeClass(score: number): string {
-    if (score >= 85) return 'badge-success';
-    if (score >= 70) return 'badge-info';
-    if (score >= 50) return 'badge-warning';
-    return 'badge-error';
-  }
-
   getPriorityBadgeClass(priority: string): string {
-    const p = priority.toLowerCase();
-    if (p === 'critical') return 'badge-error';
-    if (p === 'important') return 'badge-warning';
-    return 'badge-info';
+    const p = priority.toUpperCase();
+    if (p === 'HIGH' || p === 'CRITICAL') return 'badge-high';
+    if (p === 'MEDIUM' || p === 'IMPORTANT') return 'badge-medium';
+    return 'badge-low';
   }
 
   formatSectionType(type: string): string {
-    return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return type.replace(/_/g, ' ').toUpperCase();
   }
 }
