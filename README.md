@@ -1,4 +1,4 @@
-# Resume Analyzer
+# ATSense: Resume Analyzer
 
 A full-stack web application for parsing, evaluating, and scoring candidate resumes against ATS (Applicant Tracking System) criteria. Built with a Spring Boot REST backend and an Angular 18 frontend, the platform provides structured section-by-section feedback and a multi-dimensional scoring model to help candidates improve their documents for modern hiring pipelines.
 
@@ -103,6 +103,44 @@ graph LR
 ```
 
 ---
+
+## Project Structure
+
+```text
+ATSense/
+├── backend/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/resumeanalyzer/
+│   │   │   │   ├── analyser/
+│   │   │   │   ├── config/
+│   │   │   │   ├── controller/
+│   │   │   │   ├── dto/
+│   │   │   │   ├── entity/
+│   │   │   │   ├── exception/
+│   │   │   │   ├── parser/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── security/
+│   │   │   │   └── service/
+│   │   │   └── resources/
+│   │   │       └── db/migration/
+│   │   └── test/
+│   └── pom.xml
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── core/
+│   │   │   ├── features/
+│   │   │   ├── layout/
+│   │   │   └── shared/
+│   │   └── environments/
+│   └── package.json
+│
+└── README.md
+```
+
 
 ## Feature Set
 
@@ -244,9 +282,8 @@ The Spring Boot backend is configured to accept cross-origin requests from `http
 ### Backend
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd Resume-Analyzer/backend
+git clone git@github.com:elel-m-b/ATSense.git
+cd ATSense
 
 # Run with the default development profile (H2 in-memory database)
 mvn spring-boot:run
@@ -258,7 +295,7 @@ mvn spring-boot:run
 ### Frontend
 
 ```bash
-cd Resume-Analyzer/frontend
+cd ATSense/frontend
 
 # Install dependencies
 npm install
