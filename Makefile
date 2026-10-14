@@ -1,4 +1,4 @@
-.PHONY: help install backend frontend run build test clean
+.PHONY: help install backend frontend run build test verify clean
 
 help:
 	@printf '%s\n' \
@@ -9,6 +9,7 @@ help:
 		'  make run       Start the backend and frontend together' \
 		'  make build     Build both applications' \
 		'  make test      Run backend and frontend tests' \
+		'  make verify    Run the full verification sweep (backend verify + frontend build)' \
 		'  make clean     Remove generated build artifacts'
 
 install:
@@ -33,6 +34,11 @@ build:
 test:
 	mvn -f backend/pom.xml test
 	npm --prefix frontend test -- --watch=false
+
+verify:
+	mvn -f backend/pom.xml clean verify
+	npm --prefix frontend ci
+	npm --prefix frontend run build
 
 clean:
 	mvn -f backend/pom.xml clean

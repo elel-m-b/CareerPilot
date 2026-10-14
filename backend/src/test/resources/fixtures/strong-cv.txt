@@ -1,0 +1,46 @@
+Yasmine El Amrani
+Casablanca, Morocco
+yasmine.elamrani@gmail.com | +212 612 345 6789
+linkedin.com/in/yasmine-elamrani | github.com/yasmine-dev
+
+PROFESSIONAL SUMMARY
+Final year computer science student at ENSIAS looking for a backend internship. I build REST APIs with Java, Spring Boot and PostgreSQL and I have shipped three academic projects to production-like environments.
+
+TECHNICAL SKILLS
+Languages: Java, Python, JavaScript, SQL
+Frameworks: Spring Boot, Node.js, React, Express
+Databases: PostgreSQL, MySQL, Redis
+DevOps & tools: Docker, Git, GitHub Actions, Linux
+Testing: JUnit, Jest
+
+EDUCATION
+Bachelor of Science in Computer Science
+ENSIAS, Rabat, Morocco
+2021 - 2024
+- Relevant coursework: Algorithms, Databases, Distributed Systems, Software Engineering
+
+PROJECTS
+Campus Marketplace API
+- Built a REST API with Spring Boot and PostgreSQL serving the student marketplace, handling 4,000 requests per day.
+- Reduced average response time from 800ms to 210ms by adding Redis caching and database indexes.
+- Containerised the service with Docker and set up a GitHub Actions pipeline.
+Technologies: Java, Spring Boot, PostgreSQL, Redis, Docker
+
+Library Management System
+- Developed a full stack application with React and Node.js used by 120 students during the semester.
+- Automated the borrowing workflow and saved the library staff about 6 hours per week.
+Technologies: React, Node.js, Express, MySQL
+
+INTERNSHIP EXPERIENCE
+Backend Intern - Atlas Digital, Casablanca
+July 2024 - September 2024
+- Implemented 9 REST endpoints for the billing module in Java and Spring Boot.
+- Wrote 40 JUnit tests raising coverage of the module from 61% to 88%.
+- Documented the API with Swagger for the frontend team.
+
+LANGUAGES
+Arabic (native), French (C1), English (C1)
+
+CERTIFICATIONS
+- AWS Cloud Practitioner Essentials, 2024
+- Meta Back-End Developer Professional Certificate, 2023
