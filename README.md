@@ -1,353 +1,191 @@
-# ATSense: Resume Analyzer
+# CareerPilot
 
-A full-stack web application for parsing, evaluating, and scoring candidate resumes against ATS (Applicant Tracking System) criteria. Built with a Spring Boot REST backend and an Angular 18 frontend, the platform provides structured section-by-section feedback and a multi-dimensional scoring model to help candidates improve their documents for modern hiring pipelines.
+> Previously titled *"ATSense: Resume Analyzer"*. CareerPilot is the project's official name; some
+> internal artifacts still use the historical `resume-analyzer` / `ResumeAnalyzer` naming.
 
----
+**CareerPilot is a full-stack web application that scores a résumé the way an Applicant Tracking
+System (ATS) does.** It extracts text from an uploaded PDF or DOCX, measures the document across
+seven weighted dimensions, and returns a numeric score, per-section feedback and a prioritised list
+of improvements.
 
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Architecture](#architecture)
-- [Feature Set](#feature-set)
-- [Technology Stack](#technology-stack)
-- [API Reference](#api-reference)
-- [Frontend-Backend Communication](#frontend-backend-communication)
-- [Setup and Usage](#setup-and-usage)
-- [Environment Variables](#environment-variables)
+Built with a **Spring Boot (Java 21)** REST backend and an **Angular 18** frontend, secured with JWT.
 
 ---
 
-## Project Overview
+## Objectives
 
-Resume Analyzer accepts PDF and DOCX documents, extracts their text content using Apache PDFBox and Apache POI, and evaluates the extracted content across seven scoring dimensions: ATS optimization, content quality, structure, skills, experience, education, and projects. Each evaluation produces a numerical overall score (0-100), dimension sub-scores, per-section textual feedback, and a prioritized list of improvement recommendations.
-
-Users authenticate via JWT-secured endpoints, and all resume data and analysis history are persisted per account. The platform supports both a deterministic rule-based scoring engine and an optional AI-assisted mode configurable at the application level.
+1. Explain the score — dimension breakdown and written feedback, not just a number.
+2. Stay deterministic — identical input always produces the identical score.
+3. Keep candidate data private — every résumé and analysis is owner-scoped.
+4. Grow into a career toolkit **without breaking the existing ATS checker**.
 
 ---
 
-## Architecture
+## Current features (implemented)
 
-### System Overview
+- **Accounts & auth:** email/password registration and login, BCrypt hashing, stateless JWT, protected
+  Angular routes.
+- **Résumé management:** upload **PDF/DOCX** (max 10 MB), server-side extraction with Apache PDFBox
+  and Apache POI, list, view (metadata + extracted text), delete.
+- **Deterministic ATS analysis:** a **7-dimension** engine (ATS compatibility 20%, content quality
+  20%, skills 15%, experience 20%, education 10%, projects 10%, structure 5%) producing an overall
+  score, seven sub-scores, per-section feedback and prioritised recommendations
+  (Critical / Important / Suggested).
+- **Dashboard & history:** totals, average and best score; per-résumé and global analysis history; an
+  aggregated recommendations page with priority/category filters.
+- **Cross-cutting:** a standardised `ApiError {code, message, …}` contract, bean validation,
+  owner-scoped data access, and CI that builds and tests both applications.
+
+## Upcoming features (planned — **not yet available**)
+
+> These come from [`CAREERPILOT_MIGRATION_PLAN.md`](CAREERPILOT_MIGRATION_PLAN.md) and are **not
+> implemented**. They are listed so the direction is clear; do not rely on them today.
+
+- Richer CV parsing (structured model, ~150-skill taxonomy, TXT support).
+- Explainable **10-dimension** ATS engine with keywords, grades and career-stage awareness.
+- CV **versioning** and re-scan against a target role or job ad.
+- Persistent, status-tracked recommendations; candidate profile and a career-readiness dashboard.
+- Companies/jobs catalog and a deterministic **job-matching** engine; application tracking.
+- CV editor, ATS template and **PDF export**.
+- **AI features (advanced):** job-description generator, interview-prep planner, RAG learning roadmap
+  and an AI Career Copilot — each with an offline deterministic fallback.
+
+See [`docs/FEATURE_ROADMAP.md`](docs/FEATURE_ROADMAP.md) for status, dependencies and acceptance
+criteria per feature.
+
+---
+
+## Technology stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | **Angular 18** (standalone components), RxJS, SCSS, Karma/Jasmine |
+| Backend | **Java 21**, **Spring Boot 3.3.5** (Web, Data JPA, Security, Validation), Maven |
+| Security | Spring Security 6, JJWT 0.12.6, BCrypt |
+| Database | **H2** in-memory (dev) / **MySQL** (prod) via Spring Data JPA + Hibernate |
+| Migrations | Flyway (`V1__initial_schema.sql`, `V2__baseline_constraints.sql`) |
+| Parsing | Apache PDFBox 3.0.3, Apache POI 5.3.0 |
+
+The database technology was determined from the configuration, not assumed: `application-dev.yml`
+(dev, H2) and `application-prod.yml` (prod, MySQL).
+
+---
+
+## High-level architecture
 
 ```mermaid
 graph TD
-    Client["Angular 18 SPA\n(localhost:4200)"]
-    Backend["Spring Boot 3 REST API\n(localhost:8080)"]
-    DB[("H2 / MySQL\nDatabase")]
-    FS["Local File System\n(Resume Storage)"]
-    AI["AI Provider\n(OpenAI / Optional)"]
+    SPA["Angular 18 SPA<br/>(localhost:4200)"]
+    API["Spring Boot 3 REST API<br/>(localhost:8080) · /api"]
+    DB[("H2 (dev) / MySQL (prod)")]
+    AI["AI provider<br/>(interface only — no-op stub today)"]
 
-    Client -- "HTTP + JWT Bearer Token" --> Backend
-    Backend -- "JPA / Hibernate" --> DB
-    Backend -- "File I/O" --> FS
-    Backend -- "REST (optional)" --> AI
+    SPA -- "HTTP + JSON · JWT" --> API
+    API -- "JPA / Hibernate" --> DB
+    API -. optional, not implemented .-> AI
 ```
 
-### Request Lifecycle
+Full diagrams (system, frontend/backend layers, request/auth flows, deployment) are in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/UML_DIAGRAMS.md`](docs/UML_DIAGRAMS.md).
 
-```mermaid
-sequenceDiagram
-    participant Browser as Angular Client
-    participant Interceptor as JWT Interceptor
-    participant API as Spring Boot API
-    participant Security as Spring Security Filter
-    participant Service as Application Service
-    participant DB as Database
+---
 
-    Browser->>Interceptor: HTTP Request
-    Interceptor->>Interceptor: Attach Authorization: Bearer <token>
-    Interceptor->>API: Authenticated HTTP Request
-    API->>Security: Validate JWT Token
-    Security->>API: Set SecurityContext (UserPrincipal)
-    API->>Service: Delegate to Service Layer
-    Service->>DB: Query via JPA Repository
-    DB-->>Service: Entity Response
-    Service-->>API: DTO Response
-    API-->>Browser: JSON Response
+## Repository structure
+
 ```
-
-### Backend Package Structure
-
-```mermaid
-graph LR
-    Root["com.resumeanalyzer"]
-    Root --> Controller["controller/\nREST endpoints"]
-    Root --> Service["service/\nBusiness logic"]
-    Root --> Repository["repository/\nJPA data access"]
-    Root --> Entity["entity/\nJPA domain models"]
-    Root --> DTO["dto/\nRequest and response objects"]
-    Root --> Security["security/\nJWT + Spring Security config"]
-    Root --> Parser["parser/\nPDF and DOCX text extraction"]
-    Root --> Analyser["analyser/\nScoring engine"]
-    Root --> Config["config/\nCORS, security, beans"]
-    Root --> Exception["exception/\nGlobal error handling"]
-```
-
-### Frontend Module Structure
-
-```mermaid
-graph LR
-    App["app/"]
-    App --> Core["core/\nServices, guards, interceptors, models"]
-    App --> Features["features/\nPage-level components"]
-    App --> Layout["layout/\nShell, sidebar, header"]
-    App --> Shared["shared/\nReusable components"]
-
-    Features --> Auth["auth/ (login, register)"]
-    Features --> Dashboard["dashboard/"]
-    Features --> Resumes["resumes/ (list, detail)"]
-    Features --> Analysis["analysis/ (list, detail)"]
-    Features --> Recs["recommendations/"]
-    Features --> Profile["profile/"]
-    Features --> Settings["settings/"]
+CareerPilot/
+├── backend/                    Spring Boot API
+│   ├── pom.xml
+│   └── src/main/java/com/resumeanalyzer/
+│       ├── controller/  service/  repository/  entity/  dto/
+│       ├── parser/      analyser/  security/    config/  exception/  common/
+│       └── resources/   application*.yml · db/migration/
+├── frontend/                   Angular 18 SPA
+│   └── src/app/  core/ (services, guards, models) · features/ · layout/ · shared/
+├── docs/                       technical documentation (see below)
+├── .github/workflows/ci.yml    CI workflow
+├── Makefile                    convenience targets
+└── CAREERPILOT_MIGRATION_PLAN.md
 ```
 
 ---
 
-## Project Structure
+## Prerequisites
 
-```text
-ATSense/
-├── backend/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/resumeanalyzer/
-│   │   │   │   ├── analyser/
-│   │   │   │   ├── config/
-│   │   │   │   ├── controller/
-│   │   │   │   ├── dto/
-│   │   │   │   ├── entity/
-│   │   │   │   ├── exception/
-│   │   │   │   ├── parser/
-│   │   │   │   ├── repository/
-│   │   │   │   ├── security/
-│   │   │   │   └── service/
-│   │   │   └── resources/
-│   │   │       └── db/migration/
-│   │   └── test/
-│   └── pom.xml
-│
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── core/
-│   │   │   ├── features/
-│   │   │   ├── layout/
-│   │   │   └── shared/
-│   │   └── environments/
-│   └── package.json
-│
-└── README.md
-```
-
-
-## Feature Set
-
-**Authentication**
-- User registration with email, username, and password
-- JWT-based login with 24-hour token expiry
-- Automatic token injection on all authenticated requests via Angular HTTP interceptor
-- Route guards preventing unauthenticated access to protected views
-
-**Resume Management**
-- Upload PDF and DOCX files up to 10 MB via multipart form
-- Automatic text extraction at upload time
-- Paginated file list with format badge, size, and upload timestamp
-- Per-file detail view showing raw extracted text and evaluation history
-- File deletion with cascading removal of associated analyses
-
-**Resume Analysis**
-- Trigger evaluation per resume on demand
-- 7-dimension scoring: ATS optimization, content quality, structure, skills, experience, education, projects
-- Aggregated overall score (weighted average, 0-100)
-- Per-section textual feedback identifying strengths and deficiencies
-- Prioritized recommendation list (HIGH / MEDIUM / LOW) with category tagging
-
-**Dashboard**
-- Summary statistics: total resumes, total analyses, average score, best score
-- Recent resumes table with inline analysis trigger
-- Analysis history list with per-entry score and ATS percentage
-
-**Recommendations**
-- Aggregated view of recommendations across all analyses
-- Filter by priority level and category
-
-**Profile and Settings**
-- Update display username
-- Toggle between dark and light interface mode
+- **JDK 21** and **Maven 3.6+**
+- **Node.js 20+** and **npm**
+- (Optional) **MySQL** if you want the prod profile
 
 ---
 
-## Technology Stack
+## Setup and run
 
-| Layer | Technology |
-|---|---|
-| Backend language | Java 21 |
-| Backend framework | Spring Boot 3.3.5 |
-| Security | Spring Security 6, JJWT (JWT) |
-| Data persistence | Spring Data JPA, Hibernate |
-| Database (default) | H2 in-memory (dev), configurable for MySQL |
-| Schema migration | Flyway |
-| PDF parsing | Apache PDFBox |
-| DOCX parsing | Apache POI |
-| Build tool | Maven |
-| Frontend language | TypeScript |
-| Frontend framework | Angular 18 (standalone components) |
-| HTTP client | Angular HttpClient + RxJS |
-| Styling | SCSS with custom CSS design system |
-| Fonts | Inter (body), JetBrains Mono (monospace labels) |
-
----
-
-## API Reference
-
-All endpoints are prefixed with `/api`. Protected endpoints require the header `Authorization: Bearer <token>`.
-
-### Authentication
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | Public | Register a new user account |
-| POST | `/api/auth/login` | Public | Authenticate and receive a JWT |
-
-### Resumes
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/resumes/upload` | Required | Upload a PDF or DOCX resume file |
-| GET | `/api/resumes` | Required | List all resumes for the authenticated user |
-| GET | `/api/resumes/{id}` | Required | Get resume detail including extracted text |
-| DELETE | `/api/resumes/{id}` | Required | Delete a resume and its analyses |
-
-### Analysis
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/resumes/{id}/analyze` | Required | Run analysis on a specific resume |
-| GET | `/api/resumes/{id}/analyses` | Required | List all analyses for a specific resume |
-| GET | `/api/analyses` | Required | List all analyses for the authenticated user |
-| GET | `/api/analyses/{id}` | Required | Get a specific analysis report |
-| DELETE | `/api/analyses/{id}` | Required | Delete an analysis report |
-
-### Dashboard and User
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api/dashboard/stats` | Required | Retrieve aggregate user statistics |
-| GET | `/api/users/me` | Required | Get current user profile |
-| PUT | `/api/users/me` | Required | Update current user profile |
-
----
-
-## Frontend-Backend Communication
-
-The Angular frontend communicates exclusively over HTTP with the Spring Boot REST API. The following mechanisms govern the integration:
-
-**JWT Interceptor** (`core/interceptors/jwt.interceptor.ts`)
-
-Every outgoing HTTP request passes through a functional interceptor that reads the stored JWT from `localStorage` and attaches it as an `Authorization: Bearer <token>` header. No request to a protected endpoint reaches the backend without this header.
-
-**Auth Service** (`core/services/auth.service.ts`)
-
-Maintains a `BehaviorSubject<User | null>` representing the current authenticated user. On login and registration, the returned token and user payload are persisted to `localStorage`. On logout, both values are cleared and the user is redirected to the login page.
-
-**Resume Service** (`core/services/resume.service.ts`)
-
-Wraps resume-related endpoints. The upload method constructs a `FormData` object with the file attached under the key `file`, matching the backend's `@RequestParam("file")` binding.
-
-**Analysis Service** (`core/services/analysis.service.ts`)
-
-Covers all analysis endpoints including trigger, history retrieval, single-report fetch, and deletion.
-
-**Auth Guard** (`core/guards/auth.guard.ts`)
-
-A functional route guard applied to all authenticated routes. Checks for a valid token via `AuthService`; unauthenticated users are redirected to `/login`.
-
-**CORS Configuration**
-
-The Spring Boot backend is configured to accept cross-origin requests from `http://localhost:4200` during local development.
-
----
-
-## Setup and Usage
-
-### Prerequisites
-
-- Java 21
-- Maven 3.9+
-- Node.js 18+ and npm 9+
-- Angular CLI 18 (or run via `npx`)
-
-### Backend
+Run these from the `CareerPilot/` directory.
 
 ```bash
-git clone git@github.com:elel-m-b/ATSense.git
-cd ATSense
+# 1. Backend (Spring Boot, port 8080) — uses in-memory H2 in the default dev profile
+mvn -f backend/pom.xml clean spring-boot:run
 
-# Run with the default development profile (H2 in-memory database)
-mvn spring-boot:run
-
-# The API will be available at http://localhost:8080
-# H2 console available at http://localhost:8080/h2-console
+# 2. Frontend (Angular, port 4200)
+npm --prefix frontend install
+npm --prefix frontend start
 ```
 
-### Frontend
+Or use the Makefile:
 
 ```bash
-cd ATSense/frontend
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm start
-
-# The application will be available at http://localhost:4200
+make backend     # backend on :8080
+make frontend    # frontend on :4200
+make run         # both together
 ```
 
-### Full-Stack Development Workflow
+The frontend calls `http://localhost:8080/api` (see `frontend/src/environments/environment.ts`).
 
-1. Start the backend server on port 8080.
-2. Start the Angular development server on port 4200.
-3. Navigate to `http://localhost:4200` in a browser.
-4. Register a new account or use the demo credentials on the login page.
-5. Upload a PDF or DOCX resume file via the header button or the dashboard.
-6. Navigate to the resume detail view and trigger analysis.
-7. Review the score breakdown, section feedback, and recommendations in the analysis report.
+**Key environment variables** (all optional in dev): `JWT_SECRET`, `DB_URL`, `DB_USERNAME`,
+`DB_PASSWORD`, `SPRING_PROFILES_ACTIVE`. Full details in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ---
 
-## Environment Variables
+## Testing
 
-### Backend
+```bash
+# Backend (JUnit 5) — 26 tests today
+mvn -f backend/pom.xml clean verify
 
-| Variable | Description | Default |
-|---|---|---|
-| `JWT_SECRET` | HMAC-SHA256 secret for signing tokens | Hardcoded development value (change for production) |
-| `AI_API_KEY` | API key for the AI provider (OpenAI or compatible) | Empty (disables AI mode) |
-| `AI_PROVIDER` | AI service provider identifier | `openai` |
-| `AI_MODEL` | Model identifier for AI analysis | `gpt-4o-mini` |
+# Frontend (Karma/Jasmine)
+npm --prefix frontend test -- --watch=false
 
-### Frontend
-
-The frontend API base URL is configured in `src/environments/environment.ts`:
-
-```typescript
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8080/api'
-};
+# Both via Make
+make verify
 ```
 
-For production builds, update `environment.prod.ts` with the deployed backend URL.
+Current verified status: backend `clean verify` → **BUILD SUCCESS, 26 tests, 0 failures**; frontend
+`ng build` → **success**.
 
 ---
 
-## Production Considerations
+## Documentation
 
-- Replace the default JWT secret with a cryptographically random 256-bit value.
-- Configure a persistent database (MySQL or PostgreSQL) via the Spring `application-prod.yml` profile.
-- Set `AI_API_KEY` to enable AI-assisted analysis mode.
-- Serve the Angular build artifacts (`dist/`) via Nginx or a cloud CDN.
-- Configure CORS in `SecurityConfig` to allow only the production frontend domain.
+| Document | What it covers |
+| --- | --- |
+| [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) | Purpose, users, status, roadmap summary |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System, frontend, backend, auth, data, deployment architecture (Mermaid) |
+| [`docs/UML_DIAGRAMS.md`](docs/UML_DIAGRAMS.md) | Use case, class, sequence, activity, component, deployment diagrams |
+| [`docs/DATABASE.md`](docs/DATABASE.md) | Tables, ERD, indexes, migrations, proposed schema |
+| [`docs/API.md`](docs/API.md) | REST endpoints, DTOs, errors, proposed endpoints |
+| [`docs/FEATURE_ROADMAP.md`](docs/FEATURE_ROADMAP.md) | Feature-by-feature plan with acceptance criteria |
+| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Setup, run, build, test, troubleshooting |
+| [`CAREERPILOT_MIGRATION_PLAN.md`](CAREERPILOT_MIGRATION_PLAN.md) | The upstream migration plan (proposed) |
+
+---
+
+## Project status and roadmap
+
+**Status:** a working MVP. The deterministic ATS checker, authentication, résumé management and
+dashboard are implemented and covered by characterisation tests. The AI hook exists as an interface
+but performs **no external calls**.
+
+**Roadmap:** complete the deterministic foundation first (richer parsing → 10-dimension engine → CV
+versioning), then the career toolkit (profile, catalog, matching, applications, CV editor), and
+finally the AI-dependent features with offline fallbacks. See
+[`docs/FEATURE_ROADMAP.md`](docs/FEATURE_ROADMAP.md).
