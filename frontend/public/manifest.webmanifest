@@ -1,0 +1,17 @@
+{
+  "name": "CareerPilot",
+  "short_name": "CareerPilot",
+  "description": "Scan a CV, score its ATS compatibility across seven weighted dimensions and see what to fix.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -312,7 +312,7 @@ registration and JWT-validation sequences.
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as Angular
+    participant UI as React page
     participant RC as ResumeController
     participant RSvc as ResumeServiceImpl
     participant PS as ResumeParserService
@@ -381,7 +381,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as Angular
+    participant UI as React page
     participant Ctl as ResumeController (proposed)
     participant Svc as ResumeService (proposed)
     participant Eng as AtsEngine (proposed)
@@ -402,7 +402,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as Angular
+    participant UI as React page
     participant Ctl as CopilotController (proposed)
     participant R as Retrieval (proposed)
     participant E as EmbeddingClient (proposed)
@@ -492,7 +492,7 @@ flowchart TD
 
 ```mermaid
 graph TD
-    subgraph Frontend["Angular app"]
+    subgraph Frontend["React app"]
         F_Router["Router + Guards"]
         F_Intercept["JWT Interceptor"]
         F_Services["Core services"]
@@ -533,7 +533,7 @@ graph TD
 ```mermaid
 graph TD
     subgraph DevMachine["Developer machine"]
-        FE["«artifact» Angular dev server<br/>:4200"]
+        FE["«artifact» Vite dev server<br/>:5173"]
         BE["«artifact» Spring Boot<br/>:8080"]
         H2[("«database» H2<br/>in-memory")]
     end
@@ -542,11 +542,11 @@ graph TD
 
     subgraph CI["CI (GitHub Actions)"]
         CI_B["«job» backend: mvn clean verify"]
-        CI_F["«job» frontend: npm ci + ng build"]
+        CI_F["«job» frontend: npm ci + npm run build"]
     end
 
     subgraph Prod["Implied production (not committed)"]
-        P_FE["«artifact» static Angular bundle"]
+        P_FE["«artifact» static Vite bundle"]
         P_BE["«artifact» Spring Boot container"]
         P_DB[("«database» MySQL")]
     end

@@ -8,7 +8,8 @@ System (ATS) does.** It extracts text from an uploaded PDF or DOCX, measures the
 seven weighted dimensions, and returns a numeric score, per-section feedback and a prioritised list
 of improvements.
 
-Built with a **Spring Boot (Java 21)** REST backend and an **Angular 18** frontend, secured with JWT.
+Built with a **Spring Boot (Java 21)** REST backend and a **React 19 + TypeScript + Vite** frontend (ported from
+`career-compass`), secured with JWT.
 
 ---
 
@@ -24,7 +25,7 @@ Built with a **Spring Boot (Java 21)** REST backend and an **Angular 18** fronte
 ## Current features (implemented)
 
 - **Accounts & auth:** email/password registration and login, BCrypt hashing, stateless JWT, protected
-  Angular routes.
+  React routes.
 - **Résumé management:** upload **PDF/DOCX** (max 10 MB), server-side extraction with Apache PDFBox
   and Apache POI, list, view (metadata + extracted text), delete.
 - **Deterministic ATS analysis:** a **7-dimension** engine (ATS compatibility 20%, content quality
@@ -35,6 +36,27 @@ Built with a **Spring Boot (Java 21)** REST backend and an **Angular 18** fronte
   aggregated recommendations page with priority/category filters.
 - **Cross-cutting:** a standardised `ApiError {code, message, …}` contract, bean validation,
   owner-scoped data access, and CI that builds and tests both applications.
+
+## Frontend: Career-Compass integration
+
+The complete Career-Compass frontend (React 19, Tailwind v4, shadcn/ui) now lives in `frontend/` and talks
+to the existing Spring Boot API. Every screen from the reference is routed and present in the sidebar; the
+ones whose backend APIs do not exist yet show **"Coming Soon — This feature is not implemented yet"**
+rather than empty states or fake data.
+
+| Screen | Route | Backend |
+| --- | --- | --- |
+| Landing page | `/` | static |
+| Sign in / register | `/auth` | `POST /api/auth/login`, `/register` |
+| Dashboard | `/dashboard` | `GET /api/dashboard/stats`, résumés and analyses |
+| My CV (upload, list, delete) | `/cv` | `/api/resumes` |
+| CV report (7 dimensions, findings, history, extracted text) | `/cv/:id` | `/api/resumes/{id}`, `/api/resumes/{id}/analyses`, `POST /api/resumes/{id}/analyze` |
+| Profile | `/profile` | `GET`/`PUT /api/users/me` |
+| Settings | `/settings` | dashboard stats, theme, session |
+| CV editor / ATS export | `/cv/:id/edit` | **Coming Soon** |
+| Jobs, JD generator, companies | `/jobs`, `/job-description`, `/companies` | **Coming Soon** |
+| Applications, interview prep | `/applications`, `/prep` | **Coming Soon** |
+| Learning roadmap, AI Copilot | `/roadmap`, `/copilot` | **Coming Soon** |
 
 ## Upcoming features (planned — **not yet available**)
 
@@ -59,7 +81,7 @@ criteria per feature.
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | **Angular 18** (standalone components), RxJS, SCSS, Karma/Jasmine |
+| Frontend | **React 19** + **TypeScript**, **Vite 7**, **Tailwind CSS v4**, shadcn/ui (Radix), Framer Motion, React Router 7, Vitest |
 | Backend | **Java 21**, **Spring Boot 3.3.5** (Web, Data JPA, Security, Validation), Maven |
 | Security | Spring Security 6, JJWT 0.12.6, BCrypt |
 | Database | **H2** in-memory (dev) / **MySQL** (prod) via Spring Data JPA + Hibernate |
@@ -75,7 +97,7 @@ The database technology was determined from the configuration, not assumed: `app
 
 ```mermaid
 graph TD
-    SPA["Angular 18 SPA<br/>(localhost:4200)"]
+    SPA["React 19 SPA<br/>(localhost:5173)"]
     API["Spring Boot 3 REST API<br/>(localhost:8080) · /api"]
     DB[("H2 (dev) / MySQL (prod)")]
     AI["AI provider<br/>(interface only — no-op stub today)"]
@@ -100,8 +122,8 @@ CareerPilot/
 │       ├── controller/  service/  repository/  entity/  dto/
 │       ├── parser/      analyser/  security/    config/  exception/  common/
 │       └── resources/   application*.yml · db/migration/
-├── frontend/                   Angular 18 SPA
-│   └── src/app/  core/ (services, guards, models) · features/ · layout/ · shared/
+├── frontend/                   React 19 SPA (Vite)
+│   └── src/  api/ (REST client) · components/ · hooks/ · lib/ · pages/
 ├── docs/                       technical documentation (see below)
 ├── .github/workflows/ci.yml    CI workflow
 ├── Makefile                    convenience targets
@@ -126,20 +148,21 @@ Run these from the `CareerPilot/` directory.
 # 1. Backend (Spring Boot, port 8080) — uses in-memory H2 in the default dev profile
 mvn -f backend/pom.xml clean spring-boot:run
 
-# 2. Frontend (Angular, port 4200)
+# 2. Frontend (React/Vite, port 5173 — proxies /api to :8080)
 npm --prefix frontend install
-npm --prefix frontend start
+npm --prefix frontend run dev
 ```
 
 Or use the Makefile:
 
 ```bash
 make backend     # backend on :8080
-make frontend    # frontend on :4200
+make frontend    # frontend on :5173
 make run         # both together
 ```
 
-The frontend calls `http://localhost:8080/api` (see `frontend/src/environments/environment.ts`).
+The Vite dev server proxies `/api` to `http://localhost:8080`, so the browser stays on one origin. Point the
+frontend at a different API with `VITE_API_BASE_URL` (absolute URL) or `VITE_API_PROXY_TARGET` (dev proxy).
 
 **Key environment variables** (all optional in dev): `JWT_SECRET`, `DB_URL`, `DB_USERNAME`,
 `DB_PASSWORD`, `SPRING_PROFILES_ACTIVE`. Full details in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
@@ -152,15 +175,15 @@ The frontend calls `http://localhost:8080/api` (see `frontend/src/environments/e
 # Backend (JUnit 5) — 26 tests today
 mvn -f backend/pom.xml clean verify
 
-# Frontend (Karma/Jasmine)
-npm --prefix frontend test -- --watch=false
+# Frontend (Vitest)
+npm --prefix frontend test
 
 # Both via Make
 make verify
 ```
 
 Current verified status: backend `clean verify` → **BUILD SUCCESS, 26 tests, 0 failures**; frontend
-`ng build` → **success**.
+`tsc -b` + `vite build` → **success**, Vitest → **11 tests, 0 failures**.
 
 ---
 

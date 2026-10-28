@@ -5,11 +5,11 @@ help:
 		'Available targets:' \
 		'  make install   Install frontend dependencies' \
 		'  make backend   Start the Spring Boot backend on port 8080' \
-		'  make frontend  Start the Angular frontend on port 4200' \
+		'  make frontend  Start the React frontend on port 5173 (proxies /api to :8080)' \
 		'  make run       Start the backend and frontend together' \
 		'  make build     Build both applications' \
 		'  make test      Run backend and frontend tests' \
-		'  make verify    Run the full verification sweep (backend verify + frontend build)' \
+		'  make verify    Run the full verification sweep (backend verify + frontend tests and build)' \
 		'  make clean     Remove generated build artifacts'
 
 install:
@@ -19,7 +19,7 @@ backend:
 	mvn -f backend/pom.xml clean spring-boot:run
 
 frontend:
-	npm --prefix frontend start
+	npm --prefix frontend run dev
 
 run:
 	@trap 'kill 0' INT TERM EXIT; \
@@ -33,13 +33,14 @@ build:
 
 test:
 	mvn -f backend/pom.xml test
-	npm --prefix frontend test -- --watch=false
+	npm --prefix frontend test
 
 verify:
 	mvn -f backend/pom.xml clean verify
 	npm --prefix frontend ci
+	npm --prefix frontend test
 	npm --prefix frontend run build
 
 clean:
 	mvn -f backend/pom.xml clean
-	rm -rf frontend/dist frontend/.angular
+	rm -rf frontend/dist frontend/.vite

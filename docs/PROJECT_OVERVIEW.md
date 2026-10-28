@@ -22,7 +22,7 @@ Objectives:
 4. **Progressively grow into a career toolkit** while preserving the existing ATS checker. The
    long-term functionality is described in the migration roadmap (see §4).
 
-> **Naming note.** The application's Maven artifact, Angular project and internal packages still use
+> **Naming note.** The application's Maven artifact and internal packages still use
 > the historical names `resume-analyzer` / `ResumeAnalyzer` / `resumeanalyzer`, and the previous
 > `README.md` titled the product **"ATSense: Resume Analyzer"**. The product is referred to as
 > **CareerPilot** throughout this documentation set. A package/artifact rename is an optional,
@@ -87,14 +87,15 @@ The following are backed by real code paths in this repository.
   by a global exception handler for all known and unknown failures.
 - Bean-validation on all request DTOs (`@NotBlank`, `@Email`, `@Size`).
 - Per-user ownership enforced in every service method by querying with `…AndUserId`.
-- CI workflow (`.github/workflows/ci.yml`) that runs the backend Maven build/tests and the Angular
+- CI workflow (`.github/workflows/ci.yml`) that runs the backend Maven build/tests and the frontend
   production build.
 
 ### 3.6 Test coverage today
 - **Backend:** 5 JUnit 5 test classes (26 tests) — `AuthServiceTest`, `AuthControllerTest`,
   `GlobalExceptionHandlerTest`, `ResumeParserServiceTest` (characterisation) and
   `DeterministicAnalyzerTest` (characterisation).
-- **Frontend:** 1 Karma/Jasmine spec (`app.component.spec.ts`).
+- **Frontend:** 1 Vitest suite (`tests/report.test.ts`, 11 tests) covering the analysis-to-report
+  mapping and upload validation.
 
 ---
 

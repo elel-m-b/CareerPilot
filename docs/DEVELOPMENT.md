@@ -30,9 +30,9 @@ CareerPilot/
 │       ├── main/java/com/resumeanalyzer/   controllers, services, entities, …
 │       ├── main/resources/                 application*.yml, db/migration/*
 │       └── test/                           JUnit tests + fixtures
-├── frontend/                   Angular 18 SPA
+├── frontend/                   React 19 SPA (Vite + Tailwind)
 │   ├── package.json
-│   └── src/app/                core/, features/, layout/, shared/
+│   └── src/                    api/, components/, hooks/, lib/, pages/
 ├── docs/                       this documentation set
 ├── .github/workflows/ci.yml    CI: backend verify + frontend build
 ├── Makefile                    convenience targets
@@ -75,31 +75,33 @@ All have defaults; override them in your shell or IDE run configuration. **Never
 
 ### 3.3 Frontend configuration
 
-The API base URL is compiled into `frontend/src/environments/environment.ts`:
+The frontend calls `/api` by default. In development Vite proxies that path to the backend:
 
 ```ts
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8080/api'
-};
+// frontend/vite.config.ts
+server: {
+  proxy: { "/api": { target: "http://localhost:8080", changeOrigin: true } }
+}
 ```
 
-Change `apiUrl` if the backend runs on a different host/port.
+Override the target with `VITE_API_PROXY_TARGET`, or point the built SPA at an absolute API URL with
+`VITE_API_BASE_URL` (for example `https://api.example.com/api`).
 
 ---
 
-## 4. Run the Angular frontend
+## 4. Run the React frontend
 
 ```bash
 cd CareerPilot
 npm --prefix frontend install     # first time only
-npm --prefix frontend start       # ng serve → http://localhost:4200
+npm --prefix frontend run dev     # Vite → http://localhost:5173
 ```
 
-The dev server reloads on change. Build a production bundle with:
+The dev server reloads on change and proxies `/api` to `http://localhost:8080`. Build a production
+bundle with:
 
 ```bash
-npm --prefix frontend run build   # output: frontend/dist/resume-analyzer-frontend
+npm --prefix frontend run build   # output: frontend/dist
 ```
 
 ---
@@ -154,8 +156,8 @@ Verified results are noted in parentheses.
 | Backend build + tests | `mvn -f backend/pom.xml clean verify` | ✅ BUILD SUCCESS, 26 tests, 0 failures |
 | Backend tests only | `mvn -f backend/pom.xml test` | ✅ |
 | Frontend install | `npm --prefix frontend ci` (or `install`) | ✅ |
-| Frontend build | `npm --prefix frontend run build` | ✅ built in ~5 s |
-| Frontend unit tests | `npm --prefix frontend test -- --watch=false` | runs Karma (headless in CI); 1 spec today |
+| Frontend build | `npm --prefix frontend run build` | ✅ `tsc -b` + `vite build` |
+| Frontend unit tests | `npm --prefix frontend test` | runs Vitest; 11 tests today |
 | Everything | `make verify` | chains backend verify + frontend ci + build |
 
 `make` targets (run from `CareerPilot/`):
@@ -163,16 +165,16 @@ Verified results are noted in parentheses.
 ```
 make install   # frontend npm install
 make backend   # run backend on :8080
-make frontend  # run frontend on :4200
+make frontend  # run frontend on :5173
 make run       # both together
 make build     # package backend + build frontend
 make test      # backend test + frontend test
 make verify    # backend clean verify + frontend ci + build
-make clean     # remove target/, frontend/dist, frontend/.angular
+make clean     # remove target/, frontend/dist
 ```
 
-> **Karma in CI.** `npm run test` watches by default; pass `-- --watch=false` for a one-shot run. A
-> browser (Chrome) must be available for Karma locally.
+> **Vitest.** `npm run test` runs once and exits; `npm run test:watch` keeps a watcher open. The
+> suites are pure functions, so no browser or running backend is required.
 
 ---
 
@@ -181,14 +183,14 @@ make clean     # remove target/, frontend/dist, frontend/.angular
 | Symptom | Cause / fix |
 | --- | --- |
 | `401` on every request except login/register | Missing/expired JWT. The frontend interceptor logs you out on `401`; log in again. Check `JWT_SECRET` did not change between restarts. |
-| Frontend requests fail with a CORS error | CORS is currently `*` + credentials, so this is rare — usually the backend is not running or `environment.apiUrl` points to the wrong host. |
+| Frontend requests fail with a CORS error | CORS is currently `*` + credentials, so this is rare — usually the backend is not running, or `VITE_API_PROXY_TARGET` / `VITE_API_BASE_URL` points to the wrong host. |
 | `Table "USERS" not found` under the prod profile | Flyway did not run. Ensure `SPRING_PROFILES_ACTIVE=prod` and the `flyway` block in `application-prod.yml` is active. |
 | `Schema-validation: missing column/table` on prod start | An entity changed without a matching Flyway migration; add a new `V<n>__…sql` (prod uses `ddl-auto: validate`). |
 | `File size exceeds maximum allowed limit (10MB)` | The multipart limit in `application.yml`; adjust `spring.servlet.multipart.max-file-size`. |
 | `Unsupported file type` | Only `.pdf` and `.docx` are accepted today. |
-| `Port 8080 already in use` | Stop the other process or run with `--server.port=8081` (and update `environment.apiUrl`). |
+| `Port 8080 already in use` | Stop the other process or run with `--server.port=8081` (and update `VITE_API_PROXY_TARGET`). |
 | Data disappears after backend restart | Expected in dev — H2 is in-memory. Use the prod/MySQL profile to persist. |
-| `npm run test` hangs | Karma watch mode; add `-- --watch=false`. |
+| `npm run test` hangs | Vitest is a one-shot run; use `npm run test:watch` for a watcher. |
 
 ---
 

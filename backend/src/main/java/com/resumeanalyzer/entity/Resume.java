@@ -29,7 +29,7 @@ public class Resume {
     @Column(name = "original_filename", nullable = false)
     private String originalFilename;
 
-    @Column(name = "file_type", nullable = false, length = 50)
+    @Column(name = "file_type", nullable = false, length = 150)
     private String fileType;
 
     @Column(name = "file_size", nullable = false)

@@ -69,7 +69,7 @@ inputs; response gains additive fields.
 **Acceptance criteria:** weights sum to 100; `overallScore` equals the weighted average (asserted);
 deterministic; a structured CV scores strictly higher than an unstructured one; missing email → a
 `critical` contact issue; missing metrics → a `warning` impact issue; existing `GET /api/analyses/{id}`
-still deserialises in the Angular client.
+still deserialises in the React client.
 
 ---
 
@@ -199,7 +199,7 @@ passages; no secrets or document text in logs.
 
 **Status: ✅ Implemented (JWT); the reference's OTP/guest auth is deliberately **not** migrated.**
 
-**Description / benefit.** Email/password registration and login; stateless JWT; protected Angular
+**Description / benefit.** Email/password registration and login; stateless JWT; protected React
 routes.
 
 **What exists:** `AuthController`, `AuthServiceImpl` (BCrypt, `AuthenticationManager`),
@@ -268,7 +268,7 @@ existing endpoints remain additive.
 | Concern | Current | Planned |
 | --- | --- | --- |
 | Backend tests | 26 tests (5 classes) | engine/service/controller/integration suites per feature |
-| Frontend tests | 1 spec | Karma/Jasmine suites for new modules |
+| Frontend tests | 11 Vitest tests | Component and integration suites for new modules |
 | CI | ✅ GitHub Actions (`ci.yml`) | unchanged, plus more coverage |
 | Security | BCrypt + JWT; CORS `*` + credentials; default JWT secret | scoped CORS; required `JWT_SECRET`; upload validation hardening |
 | Deployment | ❌ no Dockerfile/compose/deploy | documented topology; optional containerisation |

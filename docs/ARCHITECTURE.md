@@ -9,14 +9,14 @@
 
 ## 1. High-level architecture (current)
 
-CareerPilot is a classic two-tier web application: an Angular single-page application talks to a
+CareerPilot is a classic two-tier web application: a React single-page application talks to a
 Spring Boot REST API over HTTP/JSON, and the API persists to a relational database through JPA. A
 stateless JWT secures every endpoint except registration and login.
 
 ```mermaid
 graph TD
     subgraph Client["Browser"]
-        SPA["Angular 18 SPA<br/>(localhost:4200)"]
+        SPA["React 19 SPA<br/>(localhost:5173)"]
     end
 
     subgraph Server["Spring Boot 3.3.5 · Java 21 (localhost:8080)"]
@@ -53,8 +53,8 @@ graph TD
 | PDF parsing | Apache PDFBox 3.0.3 | `parser/PdfResumeParser.java` |
 | DOCX parsing | Apache POI 5.3.0 (`poi-ooxml`) | `parser/DocxResumeParser.java` |
 | Boilerplate | Lombok | `backend/pom.xml` |
-| Frontend | Angular 18.2 (standalone components), RxJS 7.8, SCSS | `frontend/package.json` |
-| Frontend tests | Karma + Jasmine | `frontend/package.json`, `angular.json` |
+| Frontend | React 19, TypeScript 5.9, Vite 7, Tailwind CSS v4, React Router 7 | `frontend/package.json` |
+| Frontend tests | Vitest | `frontend/package.json`, `frontend/vitest.config.ts` |
 
 ---
 
@@ -209,102 +209,90 @@ keys exist in `application.yml` but are only read to log a message. **No AI proc
 
 ## 3. Frontend architecture (current)
 
-Angular 18 with **standalone components** (no NgModules), the new functional `provideRouter` /
-`provideHttpClient` bootstrap, and a feature-folder structure.
+React 19 with TypeScript, Vite and Tailwind CSS v4. The UI is the Career-Compass frontend, ported
+into `frontend/` and pointed at the existing Spring Boot API. State is request/response: a small
+`useResource` hook fetches, pages re-fetch after mutations, and the JWT lives in `localStorage`.
 
 ```mermaid
 graph TD
-    subgraph Core["core/"]
-        GS["AuthService"]
-        RSvc["ResumeService"]
-        ASvc["AnalysisService"]
-        DSvc["DashboardService"]
-        USvc["UserService"]
-        TSvc["ThemeService"]
-        ToastSvc["ToastService"]
-        JWTInt["jwtInterceptor (functional)"]
-        AG["authGuard"]
-        GG["guestGuard"]
-        MODELS["models/ (auth, resume, analysis, dashboard, user)"]
+    subgraph Api["api/"]
+        CLIENT["client.ts (fetch + JWT + ApiError)"]
+        EP["endpoints.ts (auth, users, resumes, analyses, dashboard)"]
+        TYPES["types.ts (backend DTOs)"]
     end
 
-    subgraph Features["features/"]
-        LOGIN["login / register"]
-        DASH["dashboard"]
-        RLIST["resume-list / resume-detail"]
-        ALIST["analysis-list / analysis-detail"]
-        RECS["recommendations"]
-        PROF["profile / settings"]
-        NF["not-found"]
+    subgraph Hooks["hooks/"]
+        AUTH["use-auth (AuthProvider + session)"]
+        RES["use-resource (loading / error / reload)"]
     end
 
-    subgraph Layout["layout/ + shared/"]
-        ML["MainLayout (header, sidebar)"]
-        UPM["resume-upload-modal"]
-        SC["score-circle / score-bar / stat-card / toast"]
+    subgraph Pages["pages/"]
+        LAND["Landing"]
+        AUTHP["Auth"]
+        DASHP["Dashboard"]
+        MYCV["MyCv"]
+        REPORT["CvAnalysis"]
+        PROF["Profile"]
+        SET["Settings"]
+        SOON["ComingSoonPage (planned features)"]
     end
 
-    AppConfig["app.config.ts<br/>provideRouter + provideHttpClient(withInterceptors)"] --> JWTInt
-    AppConfig --> Routes["app.routes.ts"]
-    Routes --> LOGIN
-    Routes --> ML
-    ML --> DASH
-    ML --> RLIST
-    ML --> ALIST
-    ML --> RECS
-    ML --> PROF
-    DASH --> DSvc
-    DASH --> RSvc
-    DASH --> ASvc
-    RLIST --> RSvc
-    RLIST --> ASvc
-    ALIST --> ASvc
-    RECS --> ASvc
-    PROF --> USvc
-    LOGIN --> GS
-    LOGIN --> TSvc
-    JWTInt --> GS
-    AG --> GS
-    GG --> GS
-    RSvc --> MODELS
-    ASvc --> MODELS
-    DSvc --> MODELS
-    USvc --> MODELS
-    GS --> MODELS
+    subgraph Shell["components/"]
+        APPSHELL["AppShell + DashboardSidebar"]
+        PANEL["Panel / StatTile"]
+        CV["ScoreDial · DimensionBars · IssueList · ScoreTrend · CvUploadDialog"]
+        UI["ui/ shadcn primitives"]
+        GATE["ComingSoon provider/dialog"]
+    end
+
+    AUTH --> CLIENT
+    RES --> CLIENT
+    EP --> CLIENT
+    CLIENT --> TYPES
+    Pages --> EP
+    Pages --> RES
+    Pages --> Shell
+    AUTH --> GATE
 ```
 
-### 3.1 Routes (from `app.routes.ts`)
+### 3.1 Routes (from `src/main.tsx`)
 
 ```mermaid
 graph TD
-    Root["/"] --> Login["/login (guestGuard)"]
-    Root --> Reg["/register (guestGuard)"]
-    Root --> Layout["'' MainLayout (authGuard)"]
-    Layout --> R1["'' → redirect /dashboard"]
-    Layout --> R2["/dashboard"]
-    Layout --> R3["/my-resumes"]
-    Layout --> R4["/my-resumes/:id"]
-    Layout --> R5["/analysis"]
-    Layout --> R6["/analysis/:id"]
-    Layout --> R7["/recommendations"]
-    Layout --> R8["/profile"]
-    Layout --> R9["/settings"]
-    Root --> NF["** NotFound"]
+    Root["/"] --> Landing["/ (public marketing page)"]
+    Root --> Auth["/auth (email + password)"]
+    Root --> Protected["RequireAuth"]
+    Protected --> D1["/dashboard"]
+    Protected --> D2["/cv"]
+    Protected --> D3["/cv/:resumeId"]
+    Protected --> D4["/profile"]
+    Protected --> D5["/settings"]
+    Protected --> P1["/cv/:resumeId/edit — Coming Soon"]
+    Protected --> P2["/jobs, /jobs/:jobId — Coming Soon"]
+    Protected --> P3["/job-description — Coming Soon"]
+    Protected --> P4["/companies, /companies/:slug — Coming Soon"]
+    Protected --> P5["/applications — Coming Soon"]
+    Protected --> P6["/prep, /prep/:planId — Coming Soon"]
+    Protected --> P7["/roadmap — Coming Soon"]
+    Protected --> P8["/copilot — Coming Soon"]
+    Root --> NF["* NotFound"]
 ```
 
-### 3.2 Frontend services → backend endpoints
+### 3.2 Frontend modules → backend endpoints
 
-| Service | Methods | Endpoint(s) |
+| Module | Methods | Endpoint(s) |
 | --- | --- | --- |
-| `AuthService` | `register`, `login` | `POST /api/auth/register`, `POST /api/auth/login` |
-| `ResumeService` | `uploadResume(file)`, `getUserResumes()`, `getResumeDetail(id)`, `deleteResume(id)` | `/api/resumes*` |
-| `AnalysisService` | `analyzeResume(id)`, `getResumeAnalyses(id)`, `getUserAnalysisHistory()`, `getAnalysisById(id)`, `deleteAnalysis(id)` | `/api/resumes/{id}/analyze`, `/api/analyses*` |
-| `DashboardService` | `getStats()` | `GET /api/dashboard/stats` |
-| `UserService` | `getCurrentUser()`, `updateProfile(req)` | `GET/PUT /api/users/me` |
-| `ThemeService` | localStorage `app_theme`, `data-theme` attribute | n/a (client-only) |
-| `ToastService` | transient UI messages | n/a (client-only) |
+| `api.auth` | `login(email, password)`, `register(username, email, password)` | `POST /api/auth/login`, `POST /api/auth/register` |
+| `api.users` | `me()`, `update(username)` | `GET/PUT /api/users/me` |
+| `api.resumes` | `list()`, `get(id)`, `upload(file)`, `remove(id)` | `/api/resumes*` |
+| `api.analyses` | `history()`, `get(id)`, `forResume(id)`, `analyze(id)`, `remove(id)` | `/api/analyses*`, `/api/resumes/{id}/analyze` |
+| `api.dashboard` | `stats()` | `GET /api/dashboard/stats` |
+| `use-auth` | session restore, sign in/up/out | `/api/users/me` + JWT |
+| `ThemeToggle` / Settings | `localStorage` theme via next-themes | n/a (client-only) |
 
-The API base URL is `environment.apiUrl` = `http://localhost:8080/api` (`src/environments/environment.ts`).
+The API base URL is `/api` by default: Vite proxies it to `http://localhost:8080` in development
+(`vite.config.ts`), and `VITE_API_BASE_URL` overrides it with an absolute URL when the SPA is served
+from a different origin.
 
 ---
 
@@ -313,19 +301,19 @@ The API base URL is `environment.apiUrl` = `http://localhost:8080/api` (`src/env
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as Angular component
-    participant S as Core service
-    participant I as jwtInterceptor
+    participant C as React page
+    participant S as api/client.ts
+    participant I as use-auth (token owner)
     participant F as JwtAuthenticationFilter
     participant Sec as Spring Security
     participant Ctl as Controller
     participant Svc as Service
     participant DB as Repository / DB
 
-    C->>S: call service method
-    S->>I: HttpClient request
+    C->>S: api.resumes.list() (etc.)
+    S->>I: read stored JWT
     I->>I: attach Authorization: Bearer <token><br/>(skipped for /auth/login and /auth/register)
-    I->>F: HTTP request
+    I->>F: fetch() request
     F->>F: validate token, load UserPrincipal
     F->>Sec: set SecurityContext
     Sec->>Ctl: authorize (authenticated) and dispatch
@@ -334,7 +322,7 @@ sequenceDiagram
     DB-->>Svc: entity
     Svc-->>Ctl: DTO
     Ctl-->>I: 200/201 JSON
-    I-->>S: response (on 401: toast + logout)
+    I-->>S: response (on 401: clear token + redirect to /auth)
     S-->>C: data
 ```
 
@@ -349,7 +337,7 @@ The interceptor (`core/interceptors/jwt.interceptor.ts`) attaches the bearer tok
 sequenceDiagram
     autonumber
     participant U as User
-    participant UI as Angular
+    participant UI as React page
     participant A as AuthController
     participant AS as AuthServiceImpl
     participant AM as AuthenticationManager
@@ -376,7 +364,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as Angular
+    participant UI as React page
     participant F as JwtAuthenticationFilter
     participant TP as JwtTokenProvider
     participant CU as CustomUserDetailsService
@@ -517,7 +505,7 @@ imply a container/Compose topology is intended but is not committed.
 ```mermaid
 graph TD
     subgraph Dev["Developer machine"]
-        NPM["npm --prefix frontend start<br/>Angular dev server :4200"]
+        NPM["npm --prefix frontend run dev<br/>Vite dev server :5173"]
         MVN["mvn -f backend/pom.xml spring-boot:run<br/>Spring Boot :8080"]
         H2[("H2 in-memory")]
     end
@@ -530,7 +518,7 @@ graph TD
     end
 
     subgraph ProdTarget["Implied production topology (not committed)"]
-        FE["Static Angular build"]
+        FE["Static Vite build"]
         BE["Spring Boot container"]
         DB[("MySQL")]
         FE --> BE --> DB
@@ -551,13 +539,13 @@ graph LR
         T5["DeterministicAnalyzerTest<br/>(characterisation)"]
         FX["fixtures/strong-cv.txt, weak-cv.txt"]
     end
-    subgraph Frontend["frontend/src"]
-        F1["app.component.spec.ts"]
+    subgraph Frontend["frontend/tests"]
+        F1["report.test.ts<br/>(report mapping + upload validation)"]
     end
 ```
 
 - Backend: **26 tests**, all green (`mvn -f backend/pom.xml clean verify`).
-- Frontend: **1 spec** (`app.component.spec.ts`).
+- Frontend: **11 tests** (`npm --prefix frontend test`).
 - The parser and analyser tests are *characterisation* tests added in Phase 0 to pin the current
   behaviour before it is refactored.
 
@@ -574,7 +562,7 @@ engines are added first; AI-dependent layers last, always behind an interface wi
 
 ```mermaid
 graph TD
-    SPA["Angular SPA<br/>dashboard · my-cv · cv-editor · jobs<br/>applications · profile · prep · roadmap · copilot"]
+    SPA["React SPA<br/>dashboard · cv · cv-editor · jobs<br/>applications · profile · prep · roadmap · copilot"]
     API["Spring Boot 3 REST API /api<br/>security(JWT) · error contract · validation"]
     CTRL["Controllers → Services (tx, ownership, orchestration)"]
     ENG["Pure deterministic engines<br/>AtsEngine · JobMatcher · CvImprover<br/>InterviewPlanner · SkillGap · Retrieval · Grounding"]
@@ -646,7 +634,7 @@ com.resumeanalyzer
 | 3 | `OpenAIAnalysisService` is a no-op stub | No AI capabilities despite config keys | Intentional; AI is P2 |
 | 4 | No object storage — original file discarded | No CV download/re-download | Plan keeps DB-stored text; storage optional (P2) |
 | 5 | Flyway only explicitly enabled in prod profile; dev relies on `ddl-auto: update` | Dev/prod schema drift risk | `V2` is written to be valid on both H2 (MySQL mode) and MySQL |
-| 6 | Frontend test coverage is one spec | Regressions in feature code can slip | Plan adds Karma/Jasmine tests with new modules |
+| 6 | Frontend test coverage is thin | Regressions in UI code can slip | Extend the Vitest suites with component tests |
 | 7 | No pagination on list endpoints | Unbounded response size at scale | Acceptable at current scale |
 | 8 | Stray `backend/src/java/com/resumeanalyzer/ResumeAnalyzerApplication.java` (identical duplicate outside the Maven source root) | Confusing; ignored by the build | Housekeeping candidate (see `commit.txt`) |
 | 9 | `analyser` vs `analyzer` package spelling | Minor inconsistency | Preserved to avoid churn |
