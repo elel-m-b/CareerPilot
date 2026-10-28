@@ -95,11 +95,13 @@ The following are backed by real code paths in this repository.
   production build.
 
 ### 3.6 Test coverage today
-- **Backend:** 5 JUnit 5 test classes (33 tests) — `AuthServiceTest`, `AuthControllerTest`,
-  `GlobalExceptionHandlerTest`, `ResumeParserServiceTest` (characterisation + detector regressions)
-  and `DeterministicAnalyzerTest` (characterisation + detector regressions).
-- **Frontend:** 1 Vitest suite (`tests/report.test.ts`, 11 tests) covering the analysis-to-report
-  mapping and upload validation.
+- **Backend:** 6 JUnit 5 test classes (45 tests) — `AuthServiceTest`, `AuthControllerTest`,
+  `GlobalExceptionHandlerTest`, `ResumeParserServiceTest` (characterisation + detector regressions),
+  `DeterministicAnalyzerTest` (characterisation + detector regressions) and `AtsDashboardFlowTest`
+  (end-to-end upload → analyse → dashboard over the real H2 database and security chain).
+- **Frontend:** 2 Vitest suites (19 tests) — `tests/report.test.ts` covers the analysis-to-report
+  mapping and upload validation; `tests/dashboard.test.ts` covers the dashboard summary derived
+  from the stats, CV and analysis history payloads.
 
 ---
 

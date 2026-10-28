@@ -1,5 +1,6 @@
 package com.resumeanalyzer.service.impl;
 
+import com.resumeanalyzer.common.AccountIdentity;
 import com.resumeanalyzer.dto.user.UpdateProfileRequest;
 import com.resumeanalyzer.dto.user.UserProfileDto;
 import com.resumeanalyzer.entity.User;
@@ -23,12 +24,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        return UserProfileDto.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .createdAt(user.getCreatedAt())
-                .build();
+        return toDto(user);
     }
 
     @Override
@@ -37,18 +33,27 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        if (!user.getUsername().equals(request.getUsername()) && userRepository.existsByUsername(request.getUsername())) {
+        String username = AccountIdentity.normalizeUsername(request.getUsername());
+
+        // Case-insensitive, like the registration check: "Tester" must not be
+        // accepted while another account already owns "tester".
+        if (!user.getUsername().equalsIgnoreCase(username)
+                && userRepository.existsByUsernameIgnoreCase(username)) {
             throw new DuplicateResourceException("Username is already taken");
         }
 
-        user.setUsername(request.getUsername());
+        user.setUsername(username);
         User updatedUser = userRepository.save(user);
 
+        return toDto(updatedUser);
+    }
+
+    private UserProfileDto toDto(User user) {
         return UserProfileDto.builder()
-                .id(updatedUser.getId())
-                .username(updatedUser.getUsername())
-                .email(updatedUser.getEmail())
-                .createdAt(updatedUser.getCreatedAt())
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

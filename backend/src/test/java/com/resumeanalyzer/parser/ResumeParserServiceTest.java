@@ -1,7 +1,11 @@
 package com.resumeanalyzer.parser;
 
+import com.resumeanalyzer.exception.BadRequestException;
+import com.resumeanalyzer.exception.UnsupportedFileTypeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -153,5 +158,26 @@ class ResumeParserServiceTest {
         assertNull(parsed.getEmail());
         assertTrue(parsed.getSkills().isEmpty());
         assertTrue(parsed.getDetectedSections().isEmpty());
+    }
+
+    @Test
+    void corruptDocumentIsReportedAsABadRequest() {
+        MultipartFile corrupt = new MockMultipartFile(
+                "file", "cv.pdf", "application/pdf",
+                "this is not a pdf".getBytes(StandardCharsets.UTF_8));
+
+        // A file with the right extension but unreadable content is a bad
+        // request, not an unsupported file type.
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> parser.extractRawText(corrupt));
+        assertTrue(ex.getMessage().contains("PDF"), ex.getMessage());
+    }
+
+    @Test
+    void unsupportedExtensionIsReportedAsAnUnsupportedType() {
+        MultipartFile text = new MockMultipartFile(
+                "file", "cv.txt", "text/plain", "hello".getBytes(StandardCharsets.UTF_8));
+
+        assertThrows(UnsupportedFileTypeException.class, () -> parser.extractRawText(text));
     }
 }

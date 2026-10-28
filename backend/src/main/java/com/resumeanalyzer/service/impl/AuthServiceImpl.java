@@ -1,5 +1,6 @@
 package com.resumeanalyzer.service.impl;
 
+import com.resumeanalyzer.common.AccountIdentity;
 import com.resumeanalyzer.dto.auth.AuthResponse;
 import com.resumeanalyzer.dto.auth.LoginRequest;
 import com.resumeanalyzer.dto.auth.RegisterRequest;
@@ -30,24 +31,30 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = AccountIdentity.normalizeEmail(request.getEmail());
+        String username = AccountIdentity.normalizeUsername(request.getUsername());
+
+        // Checked case-insensitively: H2 (dev) compares exactly while MySQL
+        // (prod) uses a case-insensitive collation, so an exact-match check let
+        // dev create a duplicate that prod rejected with a 500.
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new DuplicateResourceException("Email address is already in use");
         }
 
-        if (userRepository.existsByUsername(request.getUsername())) {
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
             throw new DuplicateResourceException("Username is already taken");
         }
 
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
+                .username(username)
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .build();
 
         User savedUser = userRepository.save(user);
 
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(email, request.getPassword())
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -65,14 +72,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
+        String email = AccountIdentity.normalizeEmail(request.getEmail());
+
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(email, request.getPassword())
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = tokenProvider.generateToken(authentication);
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         return AuthResponse.builder()

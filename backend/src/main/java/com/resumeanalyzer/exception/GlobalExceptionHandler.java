@@ -2,19 +2,26 @@ package com.resumeanalyzer.exception;
 
 import com.resumeanalyzer.common.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -66,8 +73,49 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", firstErrorMsg, request);
     }
 
+    /**
+     * A request body that the server cannot parse is a client error. Without this
+     * handler the catch-all below turned malformed JSON into a 500, which hid the
+     * actual cause from API clients.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "INVALID_REQUEST_BODY",
+                "Request body is missing or malformed", request);
+    }
+
+    /** A path or query value that cannot be converted (e.g. {@code /api/resumes/abc}). */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "INVALID_PARAMETER",
+                "Invalid value for '" + ex.getName() + "'", request);
+    }
+
+    /** A required query parameter was not supplied. */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParameter(MissingServletRequestParameterException ex,
+                                                           HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "MISSING_PARAMETER",
+                "Required parameter '" + ex.getParameterName() + "' is missing", request);
+    }
+
+    /** A multipart request arrived without its required part, such as the CV file. */
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiError> handleMissingPart(MissingServletRequestPartException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "MISSING_PART",
+                "Required part '" + ex.getRequestPartName() + "' is missing", request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex,
+                                                             HttpServletRequest request) {
+        return buildError(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED",
+                "Request method '" + ex.getMethod() + "' is not supported", request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex, HttpServletRequest request) {
+        log.error("Unhandled exception for {} {}", request.getMethod(), request.getRequestURI(), ex);
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR",
                 "An unexpected error occurred: " + ex.getMessage(), request);
     }

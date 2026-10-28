@@ -10,8 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useResource } from "@/hooks/use-resource";
+import { summariseDashboard } from "@/lib/cv/dashboard";
 import {
-  countSeverities,
   dimensionsFromAnalysis,
   issuesFromAnalysis,
   trendFromAnalyses,
@@ -20,6 +20,7 @@ import { formatBytes } from "@/lib/cv/validation";
 import { TONE_LABEL, TONE_TEXT, formatRelative, scoreTone } from "@/lib/format";
 import { VIEWPORT, staggerContainer } from "@/lib/motion";
 import type { AtsDimension } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
   AlertCircle,
@@ -182,22 +183,19 @@ export default function Dashboard() {
     );
   }
 
-  const resumeRows = resumes.data ?? [];
-  const analyses = history.data ?? [];
-  const latest = analyses[0];
-  const currentResume =
-    resumeRows.find((resume) => resume.id === latest?.resumeId) ?? resumeRows[0];
-  const currentAnalyses = latest
-    ? analyses.filter((analysis) => analysis.resumeId === latest.resumeId)
-    : [];
-  const previous = currentAnalyses[1];
+  const summary = summariseDashboard({
+    stats: stats.data,
+    resumes: resumes.data,
+    analyses: history.data,
+  });
+  const { latest, previous, currentResume, currentAnalyses, severityCounts } = summary;
   const dimensions = latest ? dimensionsFromAnalysis(latest) : [];
   const previousDimensions = previous ? dimensionsFromAnalysis(previous) : undefined;
   const issues = latest ? issuesFromAnalysis(latest) : [];
-  const severityCounts = countSeverities(issues);
-  const score = latest?.overallScore ?? stats.data?.averageScore ?? 0;
+  const score = latest?.overallScore ?? 0;
+  const hasResumes = (resumes.data?.length ?? 0) > 0 || summary.totalResumes > 0;
 
-  if (resumeRows.length === 0) {
+  if (!hasResumes) {
     return (
       <AppShell area="Dashboard">
         <PageHeader
@@ -222,8 +220,8 @@ export default function Dashboard() {
           latest
             ? `Latest scan: ${currentResume?.originalFilename ?? latest.originalFilename} · ${formatRelative(
                 Date.parse(latest.analyzedAt),
-              )} · ${stats.data?.totalAnalyses ?? analyses.length} scan${
-                (stats.data?.totalAnalyses ?? analyses.length) === 1 ? "" : "s"
+              )} · ${summary.totalAnalyses} scan${
+                summary.totalAnalyses === 1 ? "" : "s"
               } recorded.`
             : "Your CV is on file but has not been scored yet. Open it to run the first scan."
         }
@@ -270,22 +268,34 @@ export default function Dashboard() {
           />
           <StatTile
             label="Priority findings"
-            value={severityCounts.critical + severityCounts.warning}
-            hint={`${severityCounts.critical} critical · ${severityCounts.warning} important`}
+            value={latest ? severityCounts.critical + severityCounts.warning : "—"}
+            hint={
+              latest
+                ? `${severityCounts.critical} critical · ${severityCounts.warning} important`
+                : "Run a scan to get findings"
+            }
           />
           <StatTile
             label="CVs on file"
-            value={stats.data?.totalResumes ?? resumeRows.length}
-            hint={`${stats.data?.totalAnalyses ?? analyses.length} scan${
-              (stats.data?.totalAnalyses ?? analyses.length) === 1 ? "" : "s"
+            value={summary.totalResumes}
+            hint={`${summary.totalAnalyses} scan${
+              summary.totalAnalyses === 1 ? "" : "s"
             } recorded`}
           />
           <StatTile
             label="Best score"
-            value={stats.data?.bestScore ?? 0}
-            unit="%"
-            tone={TONE_TEXT[scoreTone(stats.data?.bestScore)]}
-            hint={`Average ${Math.round(stats.data?.averageScore ?? 0)}% across all scans`}
+            value={summary.bestScore ?? "—"}
+            unit={summary.bestScore !== null ? "%" : undefined}
+            tone={
+              summary.bestScore !== null
+                ? TONE_TEXT[scoreTone(summary.bestScore)]
+                : undefined
+            }
+            hint={
+              summary.averageScore !== null
+                ? `Average ${Math.round(summary.averageScore)}% across all scans`
+                : "No scans recorded yet"
+            }
           />
         </motion.div>
 
@@ -434,9 +444,72 @@ export default function Dashboard() {
           </div>
         )}
 
+        <RecentScans
+          analyses={summary.analyses}
+          onOpen={(resumeId) => navigate(`/cv/${resumeId}`)}
+        />
+
         <PlannedFeatures />
       </div>
     </AppShell>
+  );
+}
+
+/**
+ * Every scan across every CV, newest first.
+ *
+ * The dashboard focuses on the current CV, so without this list a scan of an
+ * older document would only be reachable from the CV library.
+ */
+function RecentScans({
+  analyses,
+  onOpen,
+}: {
+  analyses: ReturnType<typeof summariseDashboard>["analyses"];
+  onOpen: (resumeId: number) => void;
+}) {
+  if (analyses.length === 0) return null;
+
+  return (
+    <Panel
+      title="Recent scans"
+      action={
+        <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          {analyses.length} total
+        </span>
+      }
+    >
+      <ul className="divide-y divide-border/70">
+        {analyses.slice(0, 5).map((analysis) => (
+          <li key={analysis.id}>
+            <button
+              type="button"
+              onClick={() => onOpen(analysis.resumeId)}
+              className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1 py-3 text-left transition-colors hover:text-foreground"
+            >
+              <span
+                className={cn(
+                  "w-12 shrink-0 text-sm tabular-nums",
+                  TONE_TEXT[scoreTone(analysis.overallScore)],
+                )}
+              >
+                {analysis.overallScore}%
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                {analysis.originalFilename}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatRelative(Date.parse(analysis.analyzedAt))}
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                {analysis.recommendations.length} finding
+                {analysis.recommendations.length === 1 ? "" : "s"}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   );
 }
 

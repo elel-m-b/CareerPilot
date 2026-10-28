@@ -132,13 +132,23 @@ export default function Settings() {
                   <StatTile
                     label="Scans recorded"
                     value={stats.data?.totalAnalyses ?? 0}
-                    hint={`Average ${Math.round(stats.data?.averageScore ?? 0)}%`}
+                    hint={
+                      (stats.data?.totalAnalyses ?? 0) > 0
+                        ? `Average ${Math.round(stats.data?.averageScore ?? 0)}%`
+                        : "Run a scan from My CV"
+                    }
                   />
                   <StatTile
                     label="Best score"
-                    value={stats.data?.bestScore ?? 0}
-                    unit="%"
-                    hint="Across every scan"
+                    value={
+                      (stats.data?.totalAnalyses ?? 0) > 0 ? (stats.data?.bestScore ?? 0) : "—"
+                    }
+                    unit={(stats.data?.totalAnalyses ?? 0) > 0 ? "%" : undefined}
+                    hint={
+                      (stats.data?.totalAnalyses ?? 0) > 0
+                        ? "Across every scan"
+                        : "No scans recorded yet"
+                    }
                   />
                 </div>
 

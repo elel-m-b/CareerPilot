@@ -11,6 +11,7 @@ import com.resumeanalyzer.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -73,8 +74,8 @@ class AuthServiceTest {
 
     @Test
     void register_Success() {
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(userRepository.existsByUsername(anyString())).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
@@ -90,22 +91,80 @@ class AuthServiceTest {
 
     @Test
     void register_DuplicateEmail_ThrowsException() {
-        when(userRepository.existsByEmail(anyString())).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class, () -> authService.register(registerRequest));
         verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
+    void register_DuplicateEmailInDifferentCase_ThrowsException() {
+        RegisterRequest mixedCase = RegisterRequest.builder()
+                .username("another_user")
+                .email("John@Example.com")
+                .password("password123")
+                .build();
+        when(userRepository.existsByEmailIgnoreCase("john@example.com")).thenReturn(true);
+
+        assertThrows(DuplicateResourceException.class, () -> authService.register(mixedCase));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void register_TrimsAndLowercasesIdentity() {
+        RegisterRequest padded = RegisterRequest.builder()
+                .username("  jane_doe  ")
+                .email("  Jane@Example.com  ")
+                .password("password123")
+                .build();
+
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            saved.setId(2L);
+            return saved;
+        });
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(tokenProvider.generateToken(any(Authentication.class))).thenReturn("mock_jwt_token");
+
+        AuthResponse response = authService.register(padded);
+
+        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(savedUser.capture());
+        assertEquals("jane_doe", savedUser.getValue().getUsername());
+        assertEquals("jane@example.com", savedUser.getValue().getEmail());
+        assertEquals("jane@example.com", response.getUser().getEmail());
+    }
+
+    @Test
     void login_Success() {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         when(tokenProvider.generateToken(any(Authentication.class))).thenReturn("mock_jwt_token");
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailIgnoreCase(anyString())).thenReturn(Optional.of(user));
 
         AuthResponse response = authService.login(loginRequest);
 
         assertNotNull(response);
         assertEquals("mock_jwt_token", response.getToken());
         assertEquals("john@example.com", response.getUser().getEmail());
+    }
+
+    @Test
+    void login_NormalizesEmailBeforeAuthenticating() {
+        LoginRequest padded = LoginRequest.builder()
+                .email("  John@Example.com ")
+                .password("password123")
+                .build();
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(tokenProvider.generateToken(any(Authentication.class))).thenReturn("mock_jwt_token");
+        when(userRepository.findByEmailIgnoreCase("john@example.com")).thenReturn(Optional.of(user));
+
+        authService.login(padded);
+
+        ArgumentCaptor<UsernamePasswordAuthenticationToken> token =
+                ArgumentCaptor.forClass(UsernamePasswordAuthenticationToken.class);
+        verify(authenticationManager).authenticate(token.capture());
+        assertEquals("john@example.com", token.getValue().getPrincipal());
     }
 }

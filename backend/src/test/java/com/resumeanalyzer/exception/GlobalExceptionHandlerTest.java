@@ -4,10 +4,15 @@ import com.resumeanalyzer.common.ApiError;
 import com.resumeanalyzer.dto.auth.RegisterRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -105,6 +110,64 @@ class GlobalExceptionHandlerTest {
         assertEquals(400, response.getStatusCode().value());
         assertEquals("VALIDATION_ERROR", response.getBody().code());
         assertEquals("Email is required", response.getBody().message());
+    }
+
+    @Test
+    void malformedBody_mapsToBadRequest() {
+        ResponseEntity<ApiError> response = handler.handleUnreadableBody(
+                new HttpMessageNotReadableException("JSON parse error", (org.springframework.http.HttpInputMessage) null),
+                request("/api/auth/login"));
+
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("INVALID_REQUEST_BODY", response.getBody().code());
+        assertEquals("Request body is missing or malformed", response.getBody().message());
+    }
+
+    @Test
+    void invalidPathVariable_mapsToBadRequest() {
+        ResponseEntity<ApiError> response = handler.handleTypeMismatch(
+                new MethodArgumentTypeMismatchException("abc", Long.class, "id", null,
+                        new NumberFormatException("For input string: \"abc\"")),
+                request("/api/resumes/abc"));
+
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("INVALID_PARAMETER", response.getBody().code());
+        assertEquals("Invalid value for 'id'", response.getBody().message());
+    }
+
+    @Test
+    void missingMultipartPart_mapsToBadRequest() {
+        ResponseEntity<ApiError> response = handler.handleMissingPart(
+                new MissingServletRequestPartException("file"), request("/api/resumes/upload"));
+
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("MISSING_PART", response.getBody().code());
+        assertEquals("Required part 'file' is missing", response.getBody().message());
+    }
+
+    @Test
+    void missingQueryParameter_mapsToBadRequest() {
+        ResponseEntity<ApiError> response = handler.handleMissingParameter(
+                new MissingServletRequestParameterException("file", "String"),
+                request("/api/resumes/upload"));
+
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("MISSING_PARAMETER", response.getBody().code());
+    }
+
+    @Test
+    void unsupportedMethod_mapsToMethodNotAllowed() {
+        ResponseEntity<ApiError> response = handler.handleMethodNotSupported(
+                new HttpRequestMethodNotSupportedException("PATCH"), request("/api/users/me"));
+
+        assertNotNull(response.getBody());
+        assertEquals(405, response.getStatusCode().value());
+        assertEquals("METHOD_NOT_ALLOWED", response.getBody().code());
+        assertEquals("Request method 'PATCH' is not supported", response.getBody().message());
     }
 
     @Test

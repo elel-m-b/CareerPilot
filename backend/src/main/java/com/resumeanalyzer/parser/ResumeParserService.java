@@ -1,5 +1,6 @@
 package com.resumeanalyzer.parser;
 
+import com.resumeanalyzer.exception.BadRequestException;
 import com.resumeanalyzer.exception.UnsupportedFileTypeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -70,7 +71,9 @@ public class ResumeParserService {
             } else {
                 throw new UnsupportedFileTypeException("Unsupported file type. Only PDF and DOCX files are allowed.");
             }
-        } catch (UnsupportedFileTypeException e) {
+        } catch (UnsupportedFileTypeException | BadRequestException e) {
+            // An unsupported extension and an unreadable/corrupt document are
+            // different failures: the second is a bad request, not a bad type.
             throw e;
         } catch (Exception e) {
             throw new UnsupportedFileTypeException("Could not read file: " + e.getMessage());

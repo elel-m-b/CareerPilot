@@ -202,7 +202,7 @@ credentials and ports with `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `JWT_SECRET`
 ## Testing
 
 ```bash
-# Backend (JUnit 5) — 33 tests today
+# Backend (JUnit 5 + Spring Boot integration) — 45 tests today
 mvn -f backend/pom.xml clean verify
 
 # Frontend (Vitest)
@@ -212,8 +212,8 @@ npm --prefix frontend test
 make verify
 ```
 
-Current verified status: backend `clean verify` → **BUILD SUCCESS, 33 tests, 0 failures**; frontend
-`tsc -b` + `vite build` → **success**, Vitest → **11 tests, 0 failures**. The Compose stack was
+Current verified status: backend `clean verify` → **BUILD SUCCESS, 45 tests, 0 failures**; frontend
+`tsc -b` + `vite build` → **success**, Vitest → **19 tests, 0 failures**. The Compose stack was
 brought up and the ATS flow was exercised through nginx (register → upload → analyse).
 
 ---
