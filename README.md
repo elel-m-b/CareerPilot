@@ -1,8 +1,5 @@
 # CareerPilot
 
-> Previously titled *"ATSense: Resume Analyzer"*. CareerPilot is the project's official name; some
-> internal artifacts still use the historical `resume-analyzer` / `ResumeAnalyzer` naming.
-
 **CareerPilot is a full-stack web application that scores a résumé the way an Applicant Tracking
 System (ATS) does.** It extracts text from an uploaded PDF or DOCX, measures the document across
 seven weighted dimensions, and returns a numeric score, per-section feedback and a prioritised list
