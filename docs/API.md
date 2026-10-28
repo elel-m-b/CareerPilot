@@ -2,7 +2,8 @@
 
 > **Scope.** §1–§7 document the **implemented** API (verifiable in `controller/`). §8 lists
 > **proposed** endpoints from [`CAREERPILOT_MIGRATION_PLAN.md`](../CAREERPILOT_MIGRATION_PLAN.md) —
-> these do not exist yet. Base URL in development: `http://localhost:8080`.
+> these do not exist yet. Base URL in development: `http://localhost:8080`; with Docker Compose the
+> API is also reachable through the frontend web server at `http://localhost:3000/api`.
 
 ---
 
@@ -182,6 +183,11 @@ Runs the deterministic 7-dimension analysis on the résumé's stored text and pe
 
 `sectionType` values: `ATS_COMPATIBILITY`, `CONTENT_QUALITY`, `SKILLS`, `EXPERIENCE`, `EDUCATION`,
 `PROJECTS`, `STRUCTURE`. `priority` values: `Critical`, `Important`, `Suggested`.
+
+**Scoring note (2026-10-28).** The response shape is unchanged, but the detectors that feed the score
+were corrected: headings instead of keyword mentions, contact-block locations, phone-shaped numbers,
+whole-token degrees, `C++`/`C#` skills, and `N+`/thousands-separated metrics. Scores for a given
+document can therefore differ from older analyses; re-run `/analyze` to recompute a stored score.
 
 Errors: `404 RESOURCE_NOT_FOUND` (résumé not owned/not found).
 

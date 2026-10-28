@@ -14,15 +14,19 @@ CareerPilot uses a **single relational database** accessed through **Spring Data
 | Profile | Database | JDBC URL default | `ddl-auto` | Flyway | Evidence |
 | --- | --- | --- | --- | --- | --- |
 | dev (default) | **H2**, in-memory, MySQL compatibility mode | `jdbc:h2:mem:resume_db;DB_CLOSE_DELAY=-1;MODE=MySQL` | `update` | not enabled in `application-dev.yml` | `application-dev.yml` |
-| prod | **MySQL** | `jdbc:mysql://mysql:3306/resume_analyzer_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC` | `validate` | enabled, `baseline-on-migrate: true`, `classpath:db/migration` | `application-prod.yml` |
+| prod | **MySQL** | `jdbc:mysql://mysql:3306/resume_analyzer_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC` (overridden to `db:3306` by Compose) | `validate` | enabled, `baseline-on-migrate: true`, `classpath:db/migration` | `application-prod.yml` |
 
 Connection settings are environment-overridable via `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`,
 `DB_DRIVER`, `DB_DIALECT`.
 
+`docker-compose.yml` starts the production-like topology: the **`db`** service runs MySQL 8.0 with a
+named volume, and the **`backend`** service starts with `SPRING_PROFILES_ACTIVE=prod` and an explicit
+`DB_URL` pointing at `db:3306`. Flyway therefore creates and migrates the schema on first start.
+
 - **dev** relies on Hibernate `ddl-auto: update` to create the schema; the H2 console is available at
   `/h2-console`.
-- **prod** relies on **Flyway** to create/migrate the schema (`V1`, `V2`) and on `ddl-auto: validate`
-  to assert the entities match it.
+- **prod** relies on **Flyway** to create/migrate the schema (`V1`, `V2`, `V3`) and on
+  `ddl-auto: validate` to assert the entities match it.
 - Because MySQL does not support `CREATE INDEX IF NOT EXISTS`, `V2` uses plain `CREATE INDEX` and
   relies on Flyway's version tracking for idempotency. The statements are written to be valid on both
   MySQL and H2 in MySQL mode.
@@ -55,7 +59,7 @@ JPA entity mappings.
 | `id` | BIGINT | PK, AUTO_INCREMENT | `Resume.id` |
 | `user_id` | BIGINT | NOT NULL, FK → `users(id)` ON DELETE CASCADE | `Resume.user` |
 | `original_filename` | VARCHAR(255) | NOT NULL | `Resume.originalFilename` |
-| `file_type` | VARCHAR(50) | NOT NULL | `Resume.fileType` |
+| `file_type` | VARCHAR(150) | NOT NULL (widened by `V3`) | `Resume.fileType` |
 | `file_size` | BIGINT | NOT NULL | `Resume.fileSize` |
 | `extracted_text` | LONGTEXT | nullable | `Resume.extractedText` |
 | `uploaded_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP, not updatable | `Resume.uploadedAt` |
@@ -186,24 +190,33 @@ JPA mirrors this with `@OneToMany(mappedBy = …, cascade = ALL, orphanRemoval =
 | Index | `idx_recommendations_analysis` | `recommendations(analysis_id)` | `V2` |
 
 The `V2` indexes mirror the composite/foreign-key access patterns of the repository queries
-(`findByUserIdOrderByUploadedAtDesc`, `findByResumeIdOrderByAnalyzedAtDesc`, `findByAnalysisId`).
+(`findByUserIdOrderByUploadedAtDescIdDesc`, `findByResumeIdOrderByAnalyzedAtDescIdDesc`,
+`findByAnalysisId`). The list queries add `id DESC` as a tie-breaker because `uploaded_at` and
+`analyzed_at` have second precision, so two rows created in the same second still return newest first.
 
 ---
 
 ## 5. Migration strategy
 
 - **Tool:** Flyway, versioned SQL scripts in `backend/src/main/resources/db/migration/`.
-- **Naming:** `V<n>__<description>.sql` (`V1__initial_schema.sql`, `V2__baseline_constraints.sql`).
+- **Naming:** `V<n>__<description>.sql` (`V1__initial_schema.sql`, `V2__baseline_constraints.sql`,
+  `V3__widen_resume_file_type.sql`).
 - **Where it runs:** enabled in the **prod** profile with `baseline-on-migrate: true`; the dev profile
-  uses Hibernate `ddl-auto: update` instead.
+  uses Hibernate `ddl-auto: update` instead. The Compose backend runs the prod profile, so every
+  container start applies pending migrations.
 - **Prod safety:** `ddl-auto: validate` means the entities must match the migrated schema exactly or
   the application fails to start — so every schema change must ship a migration.
 
 ```mermaid
 graph LR
     V1["V1__initial_schema.sql<br/>5 tables"] --> V2["V2__baseline_constraints.sql<br/>4 indexes"]
-    V2 --> V3["(proposed) V3…V14<br/>see §6"]
+    V2 --> V3["V3__widen_resume_file_type.sql<br/>file_type → VARCHAR(150)"]
+    V3 --> V4["(proposed) V4…V15<br/>see §6"]
 ```
+
+> **Migration numbering.** `V3` is already taken by the `file_type` widening, so the roadmap
+> migrations listed below (numbered V3…V14 in the original plan) must be allocated from **V4**
+> onward. The names are indicative; only `V1`–`V3` exist today.
 
 ---
 
@@ -214,7 +227,7 @@ graph LR
 
 | Migration | Change | Purpose |
 | --- | --- | --- |
-| `V3__analysis_engine_fields.sql` | Add `grade`, `band`, `engine_version`, keyword columns to `resume_analyses`; add `severity`, `explanation`, `recommendation_text`, `dimension` to `recommendations` | 10-dimension explainable engine |
+| `V4__analysis_engine_fields.sql` | Add `grade`, `band`, `engine_version`, keyword columns to `resume_analyses`; add `severity`, `explanation`, `recommendation_text`, `dimension` to `recommendations` | 10-dimension explainable engine |
 | `V4__resume_versioning.sql` | Add `version`, `is_current`, `label`, `career_stage`, `target_role`, `job_description`, `parsed`, `score`, `grade`, `analyzed_at` to `resumes` (+ backfill) | CV versioning & re-scan |
 | `V5__persistent_recommendations.sql` | Add `key`, `dimension`, `title`, `problem`, `why`, `action`, `status`, timestamps to `recommendations` | Status-tracked findings |
 | `V6__candidate_profiles.sql` | New `candidate_profiles` table | Candidate profile |

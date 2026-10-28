@@ -49,7 +49,7 @@ graph TD
 | Security | Spring Security 6 + JJWT 0.12.6 + BCrypt | `security/`, `config/SecurityConfig.java` |
 | Persistence | Spring Data JPA / Hibernate | `repository/`, `entity/` |
 | Databases | H2 (dev, in-memory, MySQL mode), MySQL (prod) | `application-dev.yml`, `application-prod.yml` |
-| Schema migration | Flyway (`V1__initial_schema.sql`, `V2__baseline_constraints.sql`) | `resources/db/migration/` |
+| Schema migration | Flyway (`V1__initial_schema.sql`, `V2__baseline_constraints.sql`, `V3__widen_resume_file_type.sql`) | `resources/db/migration/` |
 | PDF parsing | Apache PDFBox 3.0.3 | `parser/PdfResumeParser.java` |
 | DOCX parsing | Apache POI 5.3.0 (`poi-ooxml`) | `parser/DocxResumeParser.java` |
 | Boilerplate | Lombok | `backend/pom.xml` |
@@ -184,19 +184,34 @@ Signals per dimension:
 | Content quality | 0.20 | word count, action verbs, metrics |
 | Skills | 0.15 | number of recognised skills |
 | Experience | 0.20 | experience section + verbs + metrics |
-| Education | 0.10 | education section + degree keywords |
+| Education | 0.10 | education section + whole-token degree keywords |
 | Projects | 0.10 | projects section + links |
 | Structure | 0.05 | ≥4 sections, email+phone present |
+
+**Extraction rules that keep the score honest** (corrected 2026-10-28, with regression tests):
+
+- **Sections** are detected from short heading-like lines (or the label before a colon), not from any
+  occurrence of a keyword in body text. "I worked on some projects" no longer counts as a Projects
+  section.
+- **Location** is a case-sensitive `City, Country` / `City, ST` line in the first 12 non-empty lines;
+  technology lists such as "Java, Spring Boot" are excluded.
+- **Phone** must contain 9–15 digits and a separator or country code, so employee ids and year ranges
+  are not treated as contact details.
+- **Degree** keywords are matched as whole tokens (`BSc`, `B.S.`, `MS`, `Master`, …); the old
+  substring check matched "we**bs**ite".
+- **Skills** use symbol-safe boundaries, so `C++` and `C#` are detected.
+- **Metrics** include percentages, currency, thousands separators (`4,000`) and `N+` counts (`15+`).
 
 ### 2.3 The parser (`parser/ResumeParserService.java`)
 
 - `extractRawText(MultipartFile)` dispatches on the filename extension to `PdfResumeParser`
   (PDFBox) or `DocxResumeParser` (POI). **Only `.pdf` and `.docx` are accepted**; anything else
   throws `UnsupportedFileTypeException`.
-- `parseText(String)` performs regex-based extraction of email/phone/location, keyword-based section
-  detection (`SUMMARY`, `EXPERIENCE`, `EDUCATION`, `SKILLS`, `PROJECTS`, `CERTIFICATIONS`,
+- `parseText(String)` performs regex-based extraction of email/phone/location, **heading-based**
+  section detection (`SUMMARY`, `EXPERIENCE`, `EDUCATION`, `SKILLS`, `PROJECTS`, `CERTIFICATIONS`,
   `LANGUAGES`), a fixed ~45-entry skill list, a fixed action-verb list, quantifiable-metric counting
-  and word counting, producing a flat `ParsedResume`.
+  and word counting, producing a flat `ParsedResume`. Text is lower-cased with `Locale.ROOT` so the
+  result is independent of the host locale.
 
 ### 2.4 AI integration today
 
@@ -392,8 +407,8 @@ sequenceDiagram
 - There is **no role system in use**: every user is granted the single authority `ROLE_USER`
   (`UserPrincipal.create`). `@EnableMethodSecurity` is enabled but no method-level rules are applied.
 - **Authorization is enforced in the service layer** via owner-scoped repository queries
-  (`findByIdAndUserId`, `findByIdAndResumeUserId`, `findByResumeUserIdOrderByAnalyzedAtDesc`), not by
-  URL-pattern rules per resource.
+  (`findByIdAndUserId`, `findByIdAndResumeUserId`, `findByResumeUserIdOrderByAnalyzedAtDescIdDesc`),
+  not by URL-pattern rules per resource.
 
 > **Known risks (see §12):** `SecurityConfig` sets `allowedOriginPatterns("*")` together with
 > `allowCredentials(true)`, and `application.yml` ships a hard-coded default JWT secret. The
@@ -409,8 +424,9 @@ sequenceDiagram
   - **prod** (`application-prod.yml`): **MySQL** (`jdbc:mysql://mysql:3306/resume_analyzer_db…`),
     `ddl-auto: validate`, Flyway enabled with `baseline-on-migrate: true`.
 - **Schema migrations:** Flyway scripts in `backend/src/main/resources/db/migration/`. `V1` creates
-  the five tables; `V2` adds baseline indexes. In the dev profile Flyway is not explicitly enabled in
-  the YAML, so H2 schema is primarily driven by `ddl-auto: update`.
+  the five tables; `V2` adds baseline indexes; `V3` widens `resumes.file_type` to `VARCHAR(150)` so
+  DOCX MIME types fit. In the dev profile Flyway is not explicitly enabled in the YAML, so H2 schema
+  is primarily driven by `ddl-auto: update`; the Compose/prod backend runs Flyway on startup.
 - **File storage:** there is **no external object store.** Uploaded files are not persisted; only the
   **extracted text** is stored in `resumes.extracted_text` (`LONGTEXT`). The original document is read
   in-memory during upload and discarded.
@@ -497,10 +513,10 @@ Spring Boot default logging via SLF4J; `@Slf4j` is used in `OpenAIAnalysisServic
 
 ## 9. Deployment architecture (current)
 
-There is **no deployment pipeline in the repository** — no Dockerfile, no docker-compose and no deploy
-workflow. What exists is a **CI** workflow (`.github/workflows/ci.yml`) that builds/tests both apps,
-plus a `Makefile` for local runs. The production datasource defaults (`jdbc:mysql://mysql:3306/…`)
-imply a container/Compose topology is intended but is not committed.
+Local development is described above; the repository now ships a **three-service Docker Compose
+stack**. There is still no deploy workflow (release to a hosting provider, TLS termination at the
+edge, secrets manager and monitoring are open items — see
+[`COMPLETION_CHECKLIST.md`](COMPLETION_CHECKLIST.md)).
 
 ```mermaid
 graph TD
@@ -514,16 +530,38 @@ graph TD
 
     subgraph CI["GitHub Actions (ci.yml)"]
         JB["job: backend → mvn clean verify"]
-        JF["job: frontend → npm ci && npm run build"]
+        JF["job: frontend → npm ci + npm test + npm run build"]
     end
 
-    subgraph ProdTarget["Implied production topology (not committed)"]
-        FE["Static Vite build"]
-        BE["Spring Boot container"]
-        DB[("MySQL")]
-        FE --> BE --> DB
+    subgraph Compose["docker compose up --build"]
+        FE["frontend · nginx<br/>host :3000 → :80"]
+        BE["backend · Spring Boot jar<br/>host :8080 → :8080"]
+        DB[("db · MySQL 8.0<br/>volume careerpilot-db")]
+        FE -- "reverse proxy /api" --> BE
+        BE -- "JDBC + Flyway" --> DB
     end
 ```
+
+**Image and runtime details.**
+
+| Service | Image / build | Runtime | Healthcheck |
+| --- | --- | --- | --- |
+| `frontend` | `node:22-alpine` build → `nginx:1.27-alpine` | static SPA + `/api` reverse proxy | `wget --spider /` |
+| `backend` | `maven:3.9-eclipse-temurin-21` build → `eclipse-temurin:21-jre-alpine` | `java -jar app.jar`, non-root user, `SPRING_PROFILES_ACTIVE=prod` | HTTP 401 from a protected endpoint |
+| `db` | `mysql:8.0` | named volume `careerpilot-db` | `mysqladmin ping` |
+
+`depends_on` uses `condition: service_healthy`, so the backend waits for MySQL and nginx waits for
+the backend. The frontend build takes `VITE_API_BASE_URL=/api` (same origin), and nginx raises
+`client_max_body_size` to 10 MB to match the backend's upload limit. nginx also re-resolves the
+`backend` service through Docker's embedded DNS, so recreating the backend container does not leave
+nginx proxying a stale IP.
+
+### 9.1 Container topology
+
+The Compose project is named `careerpilot`. Only two ports are published (frontend 3000, backend
+8080 by default); MySQL is reachable only on the internal network. Every credential and port can be
+overridden from the environment (`MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`,
+`MYSQL_ROOT_PASSWORD`, `JWT_SECRET`, `BACKEND_PORT`, `FRONTEND_PORT`).
 
 ---
 
@@ -535,8 +573,8 @@ graph LR
         T1["AuthServiceTest"]
         T2["AuthControllerTest (@WebMvcTest)"]
         T3["GlobalExceptionHandlerTest"]
-        T4["ResumeParserServiceTest<br/>(characterisation)"]
-        T5["DeterministicAnalyzerTest<br/>(characterisation)"]
+        T4["ResumeParserServiceTest<br/>(characterisation + detector regressions)"]
+        T5["DeterministicAnalyzerTest<br/>(characterisation + detector regressions)"]
         FX["fixtures/strong-cv.txt, weak-cv.txt"]
     end
     subgraph Frontend["frontend/tests"]
@@ -544,10 +582,11 @@ graph LR
     end
 ```
 
-- Backend: **26 tests**, all green (`mvn -f backend/pom.xml clean verify`).
+- Backend: **33 tests**, all green (`mvn -f backend/pom.xml clean verify`).
 - Frontend: **11 tests** (`npm --prefix frontend test`).
-- The parser and analyser tests are *characterisation* tests added in Phase 0 to pin the current
-  behaviour before it is refactored.
+- The parser and analyser suites are *characterisation* tests added in Phase 0 to pin the current
+  behaviour before it is refactored; they were updated and extended in the 2026-10-28 correctness
+  pass with regression tests for the contact, heading, degree, symbol-skill and metric detectors.
 
 ---
 
@@ -633,9 +672,9 @@ com.resumeanalyzer
 | 2 | Hard-coded default JWT secret in `application.yml` | Token forgery if unchanged in prod | Scheduled for hardening |
 | 3 | `OpenAIAnalysisService` is a no-op stub | No AI capabilities despite config keys | Intentional; AI is P2 |
 | 4 | No object storage — original file discarded | No CV download/re-download | Plan keeps DB-stored text; storage optional (P2) |
-| 5 | Flyway only explicitly enabled in prod profile; dev relies on `ddl-auto: update` | Dev/prod schema drift risk | `V2` is written to be valid on both H2 (MySQL mode) and MySQL |
+| 5 | Flyway only explicitly enabled in prod profile; dev relies on `ddl-auto: update` | Dev/prod schema drift risk | `V2`/`V3` are written to be valid on both H2 (MySQL mode) and MySQL |
 | 6 | Frontend test coverage is thin | Regressions in UI code can slip | Extend the Vitest suites with component tests |
 | 7 | No pagination on list endpoints | Unbounded response size at scale | Acceptable at current scale |
 | 8 | Stray `backend/src/java/com/resumeanalyzer/ResumeAnalyzerApplication.java` (identical duplicate outside the Maven source root) | Confusing; ignored by the build | Housekeeping candidate (see `commit.txt`) |
 | 9 | `analyser` vs `analyzer` package spelling | Minor inconsistency | Preserved to avoid churn |
-| 10 | No Dockerfile / deploy pipeline committed | Deployment steps undocumented | Documented as a gap in [`DEVELOPMENT.md`](DEVELOPMENT.md) |
+| 10 | Compose stack exists, but no production deploy pipeline (TLS, managed DB, backups, monitoring) | Self-hosted only; operational hardening outstanding | Tracked as checkboxes in [`COMPLETION_CHECKLIST.md`](COMPLETION_CHECKLIST.md) |

@@ -1,0 +1,70 @@
+# CareerPilot — full stack.
+#
+#   docker compose up --build      # build images and start everything
+#   docker compose ps              # health status of every service
+#   docker compose down            # stop (add -v to also delete the database volume)
+#
+# The frontend is reachable on http://localhost:3000, the REST API directly on
+# http://localhost:8080. Override any credential or port through the environment
+# (see docs/DEVELOPMENT.md §6.3).
+
+name: careerpilot
+
+services:
+  # Database service: MySQL, persisted in a named volume.
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-resume_analyzer_db}
+      MYSQL_USER: ${MYSQL_USER:-resume_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-resume_pass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pass}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - careerpilot-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # Application service: Spring Boot REST API (prod profile, Flyway migrations).
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:-resume_analyzer_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER:-resume_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-resume_pass}
+      # Development default only — override JWT_SECRET outside a local machine.
+      JWT_SECRET: ${JWT_SECRET:-401b65712b658cf54673054364264f26acb63b2a47b860583b4819193f12ce19}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  # Web server: nginx serves the built React SPA and proxies /api to the backend.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+
+volumes:
+  careerpilot-db:

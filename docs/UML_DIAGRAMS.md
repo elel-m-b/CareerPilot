@@ -542,18 +542,36 @@ graph TD
 
     subgraph CI["CI (GitHub Actions)"]
         CI_B["«job» backend: mvn clean verify"]
-        CI_F["«job» frontend: npm ci + npm run build"]
+        CI_F["«job» frontend: npm ci + npm test + npm run build"]
     end
-
-    subgraph Prod["Implied production (not committed)"]
-        P_FE["«artifact» static Vite bundle"]
-        P_BE["«artifact» Spring Boot container"]
-        P_DB[("«database» MySQL")]
-    end
-    P_FE --> P_BE
-    P_BE -- "JDBC" --> P_DB
 ```
 
-> Deployment to a server is **not** implemented in the repository (no Dockerfile/compose/deploy
-> workflow). The production datasource defaults imply the topology shown on the right, but it is
-> illustrative.
+### 6.2 Implemented Docker Compose stack
+
+```mermaid
+graph TD
+    subgraph Compose["docker compose up (project: careerpilot)"]
+        FE["«container» frontend<br/>nginx:1.27-alpine<br/>:80 → host :3000"]
+        BE["«container» backend<br/>Spring Boot 3.3.5 / Java 21<br/>:8080 → host :8080"]
+        DB[("«container» db<br/>MySQL 8.0<br/>volume careerpilot-db")]
+    end
+
+    Browser["Browser"] -- "SPA + /api/*" --> FE
+    FE -- "proxy_pass http://backend:8080" --> BE
+    BE -- "JDBC / Hibernate<br/>prod profile + Flyway" --> DB
+```
+
+- The **frontend** image is a multi-stage build (`node:22-alpine` → `nginx:1.27-alpine`). nginx serves
+  the SPA with history fallback, caches hashed assets, raises `client_max_body_size` to 10 MB and
+  proxies `/api/` to `http://backend:8080`, so the browser uses one origin.
+- The **backend** image is a multi-stage build (`maven:3.9-eclipse-temurin-21` →
+  `eclipse-temurin:21-jre-alpine`). It runs the packaged jar as a non-root user with
+  `SPRING_PROFILES_ACTIVE=prod`.
+- The **db** service uses a named volume, a `mysqladmin ping` healthcheck and utf8mb4 settings. The
+  backend waits for it to be healthy; the frontend waits for the backend healthcheck.
+- Credentials and ports are overridable through the environment (see
+  [`DEVELOPMENT.md`](DEVELOPMENT.md) §6.3).
+
+> This stack is a local/self-hosted deployment reference, not a production hardening guarantee: TLS,
+> secret management, managed backups and monitoring are still open items tracked in
+> [`COMPLETION_CHECKLIST.md`](COMPLETION_CHECKLIST.md).

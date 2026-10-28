@@ -1,8 +1,9 @@
 # CareerPilot — Development Guide
 
-> All commands below were verified against this repository on **2026-10-14** with **Java 21.0.12**,
-> **Maven 3.6.3**, **Node 24** and **npm 11**. Run Maven/npm commands from the **`CareerPilot/`**
-> directory (the folder containing `backend/`, `frontend/` and the `Makefile`).
+> All commands below were verified against this repository on **2026-10-28** with **Java 21.0.12**,
+> **Maven 3.6.3**, **Node 24**, **npm 11**, and **Docker 29 / Docker Compose v5**. Run Maven/npm
+> commands from the **`CareerPilot/`** directory (the folder containing `backend/`, `frontend/`,
+> `docker-compose.yml` and the `Makefile`).
 
 ---
 
@@ -14,9 +15,10 @@
 | Maven | 3.6+ | dependency/build management |
 | Node.js | 20+ (CI uses 20; Node 24 also works locally) | `frontend/package.json` |
 | npm | 10+ | the frontend uses npm (lockfile `package-lock.json`) |
+| Docker + Docker Compose | Compose v2+ | the full-stack `docker-compose.yml` (optional for local dev) |
 | Git | any | |
 
-Optional: a running **MySQL** instance if you want to exercise the prod profile.
+Optional: a running **MySQL** instance if you want to exercise the prod profile without Docker.
 
 ---
 
@@ -25,14 +27,18 @@ Optional: a running **MySQL** instance if you want to exercise the prod profile.
 ```
 CareerPilot/
 ├── backend/                    Spring Boot API (Maven)
+│   ├── Dockerfile              multi-stage build → JRE runtime
 │   ├── pom.xml
 │   └── src/
 │       ├── main/java/com/resumeanalyzer/   controllers, services, entities, …
 │       ├── main/resources/                 application*.yml, db/migration/*
 │       └── test/                           JUnit tests + fixtures
 ├── frontend/                   React 19 SPA (Vite + Tailwind)
+│   ├── Dockerfile              node build → nginx web server
+│   ├── nginx.conf              SPA fallback + /api proxy
 │   ├── package.json
 │   └── src/                    api/, components/, hooks/, lib/, pages/
+├── docker-compose.yml          db + backend + frontend stack
 ├── docs/                       this documentation set
 ├── .github/workflows/ci.yml    CI: backend verify + frontend build
 ├── Makefile                    convenience targets
@@ -69,9 +75,14 @@ All have defaults; override them in your shell or IDE run configuration. **Never
 | `AI_API_KEY` | *(empty)* | `application.yml` | Reserved for AI (unused today) |
 | `AI_PROVIDER` | `openai` | `application.yml` | Reserved |
 | `AI_MODEL` | `gpt-4o-mini` | `application.yml` | Reserved |
+| `MYSQL_DATABASE` | `resume_analyzer_db` | `docker-compose.yml` | DB created by the MySQL container |
+| `MYSQL_USER` / `MYSQL_PASSWORD` | `resume_user` / `resume_pass` | `docker-compose.yml` | DB credentials shared by both containers |
+| `MYSQL_ROOT_PASSWORD` | `root_pass` | `docker-compose.yml` | MySQL root password (container only) |
+| `BACKEND_PORT` / `FRONTEND_PORT` | `8080` / `3000` | `docker-compose.yml` | Host ports |
 
-> **Security note.** Replace `JWT_SECRET` with a strong random value outside local development. The
-> default value in `application.yml` is for development only.
+> **Security note.** Replace `JWT_SECRET` (and the MySQL passwords) with strong random values outside
+> local development. The defaults in `application.yml` and `docker-compose.yml` are for development
+> only.
 
 ### 3.3 Frontend configuration
 
@@ -132,7 +143,7 @@ With the `dev` profile the database is an in-memory H2 instance and the H2 conso
 No setup required — H2 starts in memory and Hibernate creates the schema (`ddl-auto: update`). Data
 is lost on restart. No MySQL or Docker is needed.
 
-### 6.2 Production-like (MySQL)
+### 6.2 Production-like (MySQL, without Docker)
 
 ```bash
 export SPRING_PROFILES_ACTIVE=prod
@@ -142,8 +153,43 @@ export DB_PASSWORD=<your-password>
 mvn -f backend/pom.xml spring-boot:run
 ```
 
-Flyway runs `V1`/`V2` against MySQL on startup, then `ddl-auto: validate` asserts the entities match
-the migrated schema. There is **no committed `docker-compose.yml`** — provision MySQL yourself.
+Flyway runs `V1`–`V3` against MySQL on startup, then `ddl-auto: validate` asserts the entities match
+the migrated schema.
+
+### 6.3 Docker Compose (recommended for the full stack)
+
+The repository ships `docker-compose.yml` with three services:
+
+| Service | Image / build | Purpose | Host port |
+| --- | --- | --- | --- |
+| `db` | `mysql:8.0` | database, persisted in `careerpilot-db` | internal only |
+| `backend` | `./backend` (`maven` → `temurin:21-jre`) | Spring Boot API, `prod` profile, Flyway | `8080` |
+| `frontend` | `./frontend` (`node:22` → `nginx:1.27`) | built SPA + `/api` reverse proxy | `3000` |
+
+```bash
+docker compose up --build        # build images and start
+docker compose ps                # healthcheck status
+docker compose logs -f backend   # follow application logs
+docker compose down              # stop (add -v to drop the DB volume)
+```
+
+Open **http://localhost:3000**. nginx serves the SPA and proxies `/api/` to `backend:8080`, so the
+browser uses a single origin. Startup order is enforced with healthchecks (`db` → `backend` →
+`frontend`). Because the backend runs the prod profile, Flyway creates the schema in MySQL and
+`ddl-auto: validate` guards entity/schema drift.
+
+Override defaults with a `.env` file or shell variables:
+
+```bash
+JWT_SECRET=$(openssl rand -base64 48) \
+MYSQL_PASSWORD=<strong-password> \
+MYSQL_ROOT_PASSWORD=<strong-root-password> \
+FRONTEND_PORT=3000 BACKEND_PORT=8080 \
+  docker compose up -d --build
+```
+
+The images are local/self-hosted references. They do **not** add TLS, a managed database, backups or
+monitoring; those are tracked in [`COMPLETION_CHECKLIST.md`](COMPLETION_CHECKLIST.md).
 
 ---
 
@@ -153,11 +199,12 @@ Verified results are noted in parentheses.
 
 | Task | Command | Result |
 | --- | --- | --- |
-| Backend build + tests | `mvn -f backend/pom.xml clean verify` | ✅ BUILD SUCCESS, 26 tests, 0 failures |
+| Backend build + tests | `mvn -f backend/pom.xml clean verify` | ✅ BUILD SUCCESS, 33 tests, 0 failures |
 | Backend tests only | `mvn -f backend/pom.xml test` | ✅ |
 | Frontend install | `npm --prefix frontend ci` (or `install`) | ✅ |
 | Frontend build | `npm --prefix frontend run build` | ✅ `tsc -b` + `vite build` |
 | Frontend unit tests | `npm --prefix frontend test` | runs Vitest; 11 tests today |
+| Docker images + stack | `docker compose up --build -d` | ✅ all three services healthy |
 | Everything | `make verify` | chains backend verify + frontend ci + build |
 
 `make` targets (run from `CareerPilot/`):
@@ -191,6 +238,11 @@ make clean     # remove target/, frontend/dist
 | `Port 8080 already in use` | Stop the other process or run with `--server.port=8081` (and update `VITE_API_PROXY_TARGET`). |
 | Data disappears after backend restart | Expected in dev — H2 is in-memory. Use the prod/MySQL profile to persist. |
 | `npm run test` hangs | Vitest is a one-shot run; use `npm run test:watch` for a watcher. |
+| `docker compose up` stops at `db` healthcheck | MySQL needs ~20–30 s on first init. Check `docker compose logs db`; the volume can be recreated with `docker compose down -v`. |
+| `backend` exits with `Schema-validation: missing table/column` | Flyway did not run or an entity changed without a migration. Keep `SPRING_PROFILES_ACTIVE=prod` and add the next `V<n>__…sql`. |
+| Frontend loads but `/api` returns 502 | The backend container is not healthy yet or crashed; run `docker compose ps` and `docker compose logs backend`. |
+| `413 Request Entity Too Large` on upload | nginx `client_max_body_size` (10 MB in `frontend/nginx.conf`) and `spring.servlet.multipart` limits must agree. |
+| `docker compose` uses old code | Rebuild with `docker compose up -d --build`; images are not rebuilt automatically. |
 
 ---
 

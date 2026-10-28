@@ -71,13 +71,13 @@ class DeterministicAnalyzerTest {
         ResumeAnalysis analysis = analyzeFixture("strong-cv.txt");
 
         assertEquals(100, analysis.getAtsScore());
-        assertEquals(60, analysis.getContentScore());
+        assertEquals(70, analysis.getContentScore());
         assertEquals(95, analysis.getSkillsScore());
         assertEquals(100, analysis.getExperienceScore());
         assertEquals(100, analysis.getEducationScore());
         assertEquals(100, analysis.getProjectsScore());
         assertEquals(100, analysis.getStructureScore());
-        assertEquals(91, analysis.getOverallScore());
+        assertEquals(93, analysis.getOverallScore());
     }
 
     @Test
@@ -88,16 +88,43 @@ class DeterministicAnalyzerTest {
         assertEquals(25, analysis.getContentScore());
         assertEquals(45, analysis.getSkillsScore());
         assertEquals(20, analysis.getExperienceScore());
-        assertEquals(70, analysis.getEducationScore());
-        assertEquals(70, analysis.getProjectsScore());
+        // No education section and no degree keyword: only the 30-point baseline.
+        assertEquals(30, analysis.getEducationScore());
+        assertEquals(30, analysis.getProjectsScore());
         assertEquals(50, analysis.getStructureScore());
-        assertEquals(32, analysis.getOverallScore());
+        assertEquals(24, analysis.getOverallScore());
     }
 
     @Test
     void overallScoreEqualsWeightedAverageOfDimensions() {
-        assertEquals(91, weightedAverage(analyzeFixture("strong-cv.txt")));
-        assertEquals(32, weightedAverage(analyzeFixture("weak-cv.txt")));
+        assertEquals(93, weightedAverage(analyzeFixture("strong-cv.txt")));
+        assertEquals(24, weightedAverage(analyzeFixture("weak-cv.txt")));
+    }
+
+    @Test
+    void ordinaryWordsAreNotDegreeKeywords() {
+        ParsedResume parsed = ParsedResume.builder()
+                .rawText("I helped with the design of a website and I know Java.")
+                .build();
+
+        ResumeAnalysis analysis = analyzer.analyze(parsed).getAnalysis();
+
+        // "website" contains "bs", but it is not a degree.
+        assertEquals(30, analysis.getEducationScore());
+    }
+
+    @Test
+    void abbreviationsCountAsDegrees() {
+        for (String degree : List.of("BSc Computer Science", "B.S. in Computer Science",
+                "MS in Software Engineering", "Master's degree in AI", "PhD in Physics")) {
+            ParsedResume parsed = ParsedResume.builder()
+                    .rawText(degree)
+                    .detectedSections(Set.of("EDUCATION"))
+                    .build();
+
+            ResumeAnalysis analysis = analyzer.analyze(parsed).getAnalysis();
+            assertEquals(100, analysis.getEducationScore(), "should detect a degree in: " + degree);
+        }
     }
 
     @Test

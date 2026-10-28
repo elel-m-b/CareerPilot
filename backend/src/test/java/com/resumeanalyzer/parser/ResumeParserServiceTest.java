@@ -70,7 +70,8 @@ class ResumeParserServiceTest {
 
         assertTrue(parsed.getActionVerbsFound().containsAll(List.of("built", "developed", "implemented", "reduced")));
         assertEquals(4, parsed.getActionVerbsFound().size());
-        assertEquals(3, parsed.getQuantifiableMetricCount());
+        // 4,000 requests per day, 61% and 88% are all quantifiable metrics.
+        assertEquals(4, parsed.getQuantifiableMetricCount());
         assertEquals(269, parsed.getWordCount());
     }
 
@@ -81,7 +82,8 @@ class ResumeParserServiceTest {
         assertNull(parsed.getEmail());
         assertNull(parsed.getPhone());
         assertNull(parsed.getLocation());
-        assertEquals(Set.of("PROJECTS"), parsed.getDetectedSections());
+        // "I worked on some projects" is body text, not a PROJECTS heading.
+        assertTrue(parsed.getDetectedSections().isEmpty());
         assertEquals(List.of("java"), parsed.getSkills());
         assertTrue(parsed.getActionVerbsFound().isEmpty());
         assertEquals(0, parsed.getQuantifiableMetricCount());
@@ -104,6 +106,43 @@ class ResumeParserServiceTest {
         ParsedResume second = parser.parseText(text);
 
         assertEquals(first, second);
+    }
+
+    @Test
+    void technologyListIsNotMistakenForLocation() {
+        ParsedResume parsed = parser.parseText("Skills: Java, Spring Boot, React, Docker");
+
+        assertNull(parsed.getLocation(), "a comma-separated tech list is not a city/country");
+        assertTrue(parsed.getDetectedSections().contains("SKILLS"));
+    }
+
+    @Test
+    void phoneNeedsToLookLikeAPhoneNumber() {
+        assertNull(parser.parseText("Employee ID 1234567890\nYear 2021 - 2024").getPhone());
+        assertEquals("+212 612 345 6789",
+                parser.parseText("Yasmine\nCasablanca, Morocco\n+212 612 345 6789").getPhone());
+    }
+
+    @Test
+    void symbolSkillsAreDetected() {
+        ParsedResume parsed = parser.parseText("Languages: C++, C#, Java and C");
+
+        assertTrue(parsed.getSkills().containsAll(List.of("c++", "c#", "java")));
+    }
+
+    @Test
+    void plusMetricsAreCounted() {
+        ParsedResume parsed = parser.parseText("Automated 15+ pipelines and 20+ services.");
+
+        assertEquals(2, parsed.getQuantifiableMetricCount(), "15+ and 20+ are measurable achievements");
+    }
+
+    @Test
+    void bodyTextIsNotDetectedAsASection() {
+        ParsedResume parsed = parser.parseText(
+                "I have experience with projects and skills.\nI helped with the design of a website.");
+
+        assertTrue(parsed.getDetectedSections().isEmpty());
     }
 
     @Test

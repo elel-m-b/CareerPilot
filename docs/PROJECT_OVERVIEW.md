@@ -75,6 +75,10 @@ The following are backed by real code paths in this repository.
   `Recommendation` rows (category + priority ∈ Critical/Important/Suggested).
 - Heuristic parsing of the extracted text: email, phone, location, detected sections, skill matches
   against a ~45-entry list, action-verb matches, and quantifiable-metric counting.
+- The detectors were corrected on 2026-10-28: sections are recognised from headings (not any keyword
+  mention), locations from contact-block lines (not any "word, word" pair), phones from 9–15-digit
+  numbers with separators (not arbitrary ids), degrees from whole tokens (not the "bs" inside
+  "website"), `C++`/`C#`, and `N+`/thousands-separated metrics. Regression tests pin each fix.
 
 ### 3.4 Dashboards and history
 - Dashboard stats: total résumés, total analyses, average score, best score.
@@ -91,9 +95,9 @@ The following are backed by real code paths in this repository.
   production build.
 
 ### 3.6 Test coverage today
-- **Backend:** 5 JUnit 5 test classes (26 tests) — `AuthServiceTest`, `AuthControllerTest`,
-  `GlobalExceptionHandlerTest`, `ResumeParserServiceTest` (characterisation) and
-  `DeterministicAnalyzerTest` (characterisation).
+- **Backend:** 5 JUnit 5 test classes (33 tests) — `AuthServiceTest`, `AuthControllerTest`,
+  `GlobalExceptionHandlerTest`, `ResumeParserServiceTest` (characterisation + detector regressions)
+  and `DeterministicAnalyzerTest` (characterisation + detector regressions).
 - **Frontend:** 1 Vitest suite (`tests/report.test.ts`, 11 tests) covering the analysis-to-report
   mapping and upload validation.
 
@@ -141,6 +145,7 @@ is deliberately *not* migrated).
 | Dashboard stats, analysis history, recommendations page | ✅ Implemented |
 | Standardised error contract, validation, ownership checks | ✅ Implemented |
 | Backend + frontend CI | ✅ Implemented |
+| Docker Compose (frontend web server, backend app, MySQL database) | ✅ Implemented |
 | Structured parsing / skill taxonomy / TXT | ⏳ Planned (Phase 1) |
 | 10-dimension engine / keywords / grades | ⏳ Planned (Phase 2) |
 | CV versioning / re-scan | ⏳ Planned (Phase 3) |
@@ -177,4 +182,5 @@ plan. No code is copied from it; algorithms are re-implemented in Java.
 | [`DATABASE.md`](DATABASE.md) | Current schema, ERD, migrations, proposed changes |
 | [`API.md`](API.md) | REST endpoints, DTOs, errors, proposed endpoints |
 | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) | Feature-by-feature plan with status and acceptance criteria |
-| [`DEVELOPMENT.md`](DEVELOPMENT.md) | Setup, run, build, test, troubleshoot |
+| [`DEVELOPMENT.md`](DEVELOPMENT.md) | Setup, run, Docker Compose, build, test, troubleshoot |
+| [`COMPLETION_CHECKLIST.md`](COMPLETION_CHECKLIST.md) | Remaining tasks, missing features and go-live checklist |

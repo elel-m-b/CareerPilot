@@ -11,10 +11,12 @@ import java.util.Optional;
 
 @Repository
 public interface ResumeAnalysisRepository extends JpaRepository<ResumeAnalysis, Long> {
-    List<ResumeAnalysis> findByResumeUserIdOrderByAnalyzedAtDesc(Long userId);
-    List<ResumeAnalysis> findByResumeIdOrderByAnalyzedAtDesc(Long resumeId);
+    // analyzed_at is stored with second precision, so id breaks ties between
+    // analyses created within the same second (newest first).
+    List<ResumeAnalysis> findByResumeUserIdOrderByAnalyzedAtDescIdDesc(Long userId);
+    List<ResumeAnalysis> findByResumeIdOrderByAnalyzedAtDescIdDesc(Long resumeId);
     Optional<ResumeAnalysis> findByIdAndResumeUserId(Long id, Long userId);
-    Optional<ResumeAnalysis> findTopByResumeIdOrderByAnalyzedAtDesc(Long resumeId);
+    Optional<ResumeAnalysis> findTopByResumeIdOrderByAnalyzedAtDescIdDesc(Long resumeId);
     
     long countByResumeUserId(Long userId);
 

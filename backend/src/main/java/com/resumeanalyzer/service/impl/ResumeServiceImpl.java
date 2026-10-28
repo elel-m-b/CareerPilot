@@ -60,7 +60,7 @@ public class ResumeServiceImpl implements ResumeService {
     @Override
     @Transactional(readOnly = true)
     public List<ResumeDto> getUserResumes(Long userId) {
-        return resumeRepository.findByUserIdOrderByUploadedAtDesc(userId)
+        return resumeRepository.findByUserIdOrderByUploadedAtDescIdDesc(userId)
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -94,7 +94,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     private ResumeDto mapToDto(Resume resume) {
-        Optional<ResumeAnalysis> latestAnalysis = analysisRepository.findTopByResumeIdOrderByAnalyzedAtDesc(resume.getId());
+        Optional<ResumeAnalysis> latestAnalysis = analysisRepository.findTopByResumeIdOrderByAnalyzedAtDescIdDesc(resume.getId());
 
         return ResumeDto.builder()
                 .id(resume.getId())

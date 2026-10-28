@@ -8,10 +8,21 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Component
 public class DeterministicAnalyzer {
+
+    /**
+     * Degree keywords, matched as whole tokens. Substring checks for "bs"/"ms"
+     * previously matched ordinary words ("we<b>bs</b>ite"), awarding full
+     * education credit to a CV that never mentions education.
+     */
+    private static final Pattern DEGREE_PATTERN = Pattern.compile(
+            "\\b(?:bachelor(?:'s)?|master(?:'s)?|doctorate|ph\\.?d|degree|mba|b\\.?s\\.?c?|m\\.?s\\.?c?|b\\.?eng|m\\.?eng)(?![a-z0-9])",
+            Pattern.CASE_INSENSITIVE);
 
     public AnalysisResult analyze(ParsedResume parsed) {
         int atsScore = calculateAtsScore(parsed);
@@ -121,11 +132,11 @@ public class DeterministicAnalyzer {
 
     private int calculateEducationScore(ParsedResume parsed) {
         int score = 30;
-        String rawLower = parsed.getRawText().toLowerCase();
+        String rawLower = parsed.getRawText().toLowerCase(Locale.ROOT);
         if (parsed.getDetectedSections().contains("EDUCATION")) {
             score += 30;
         }
-        if (rawLower.contains("bachelor") || rawLower.contains("master") || rawLower.contains("degree") || rawLower.contains("bs") || rawLower.contains("ms") || rawLower.contains("phd")) {
+        if (DEGREE_PATTERN.matcher(rawLower).find()) {
             score += 40;
         }
         return Math.min(100, score);
@@ -136,7 +147,8 @@ public class DeterministicAnalyzer {
         if (parsed.getDetectedSections().contains("PROJECTS")) {
             score += 40;
         }
-        if (parsed.getRawText().toLowerCase().contains("github") || parsed.getRawText().toLowerCase().contains("http")) {
+        String rawLower = parsed.getRawText().toLowerCase(Locale.ROOT);
+        if (rawLower.contains("github") || rawLower.contains("http")) {
             score += 30;
         }
         return Math.min(100, score);

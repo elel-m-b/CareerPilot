@@ -74,7 +74,7 @@ public class AnalysisServiceImpl implements AnalysisService {
         resumeRepository.findByIdAndUserId(resumeId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found or access denied"));
 
-        return analysisRepository.findByResumeIdOrderByAnalyzedAtDesc(resumeId)
+        return analysisRepository.findByResumeIdOrderByAnalyzedAtDescIdDesc(resumeId)
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -83,7 +83,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     @Transactional(readOnly = true)
     public List<ResumeAnalysisDto> getUserAnalysisHistory(Long userId) {
-        return analysisRepository.findByResumeUserIdOrderByAnalyzedAtDesc(userId)
+        return analysisRepository.findByResumeUserIdOrderByAnalyzedAtDescIdDesc(userId)
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());

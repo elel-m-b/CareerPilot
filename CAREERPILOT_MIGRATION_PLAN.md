@@ -15,6 +15,14 @@
 > **[fact]** = verified by inspecting the code in one of the two repositories;
 > **[rec]** = a recommendation from this plan, not present in the code yet.
 > Where a fact is cited, the file path is given so the next agent can re-verify it.
+>
+> **Repository status update (2026-10-28).** This is the original upstream plan; some statements are
+> now historical. The frontend has been ported to **React 19** (Angular references below are
+> historical), the ATS detectors were corrected, and a **three-service Docker Compose** stack
+> (`db`/`backend`/`frontend`) was added. `V3` is now used by
+> `V3__widen_resume_file_type.sql`, so the roadmap migrations proposed below must be allocated from
+> **V4** onward. Current status and the remaining work are tracked in
+> [`docs/COMPLETION_CHECKLIST.md`](docs/COMPLETION_CHECKLIST.md).
 
 ---
 

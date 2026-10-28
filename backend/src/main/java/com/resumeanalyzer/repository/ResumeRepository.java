@@ -9,7 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume, Long> {
-    List<Resume> findByUserIdOrderByUploadedAtDesc(Long userId);
+    // uploaded_at has second precision, so id breaks ties between uploads made
+    // within the same second (newest first).
+    List<Resume> findByUserIdOrderByUploadedAtDescIdDesc(Long userId);
     Optional<Resume> findByIdAndUserId(Long id, Long userId);
     long countByUserId(Long userId);
 }

@@ -31,7 +31,10 @@ Built with a **Spring Boot (Java 21)** REST backend and a **React 19 + TypeScrip
 - **Deterministic ATS analysis:** a **7-dimension** engine (ATS compatibility 20%, content quality
   20%, skills 15%, experience 20%, education 10%, projects 10%, structure 5%) producing an overall
   score, seven sub-scores, per-section feedback and prioritised recommendations
-  (Critical / Important / Suggested).
+  (Critical / Important / Suggested). Contact, heading, degree, skill and metric detection was
+  corrected in the 2026-10-28 pass: tech lists no longer count as locations, numeric ids no longer
+  count as phone numbers, "website" no longer counts as a "BS" degree, `C++`/`C#` and `15+` are
+  recognised, and sections come from headings rather than body mentions.
 - **Dashboard & history:** totals, average and best score; per-résumé and global analysis history; an
   aggregated recommendations page with priority/category filters.
 - **Cross-cutting:** a standardised `ApiError {code, message, …}` contract, bean validation,
@@ -117,13 +120,17 @@ Full diagrams (system, frontend/backend layers, request/auth flows, deployment) 
 ```
 CareerPilot/
 ├── backend/                    Spring Boot API
+│   ├── Dockerfile              multi-stage build → JRE image
 │   ├── pom.xml
 │   └── src/main/java/com/resumeanalyzer/
 │       ├── controller/  service/  repository/  entity/  dto/
 │       ├── parser/      analyser/  security/    config/  exception/  common/
 │       └── resources/   application*.yml · db/migration/
 ├── frontend/                   React 19 SPA (Vite)
+│   ├── Dockerfile              node build → nginx web server
+│   ├── nginx.conf              SPA fallback + /api reverse proxy
 │   └── src/  api/ (REST client) · components/ · hooks/ · lib/ · pages/
+├── docker-compose.yml          db + backend + frontend stack
 ├── docs/                       technical documentation (see below)
 ├── .github/workflows/ci.yml    CI workflow
 ├── Makefile                    convenience targets
@@ -169,10 +176,33 @@ frontend at a different API with `VITE_API_BASE_URL` (absolute URL) or `VITE_API
 
 ---
 
+## Run with Docker Compose (frontend + backend + database)
+
+```bash
+docker compose up --build      # build images and start the stack
+# open http://localhost:3000   (API directly on http://localhost:8080)
+docker compose ps              # health status of every service
+docker compose down            # stop; add -v to delete the database volume
+```
+
+| Service | Role | Runtime | Port |
+| --- | --- | --- | --- |
+| `frontend` | Web server for the built SPA; proxies `/api` to the backend | nginx 1.27 (built with Node 22) | `3000` → 80 |
+| `backend` | Application service: Spring Boot REST API | JRE 21, `prod` profile, Flyway | `8080` → 8080 |
+| `db` | Database service: MySQL with a named volume | MySQL 8.0 | internal only |
+
+Startup is ordered by healthchecks: the backend waits for MySQL, nginx waits for the backend. The
+frontend and backend call each other by Compose service name over the internal network. Override
+credentials and ports with `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `JWT_SECRET`, `BACKEND_PORT` and
+`FRONTEND_PORT` (see [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) §6.3).
+`JWT_SECRET` must be replaced outside a local machine.
+
+---
+
 ## Testing
 
 ```bash
-# Backend (JUnit 5) — 26 tests today
+# Backend (JUnit 5) — 33 tests today
 mvn -f backend/pom.xml clean verify
 
 # Frontend (Vitest)
@@ -182,8 +212,9 @@ npm --prefix frontend test
 make verify
 ```
 
-Current verified status: backend `clean verify` → **BUILD SUCCESS, 26 tests, 0 failures**; frontend
-`tsc -b` + `vite build` → **success**, Vitest → **11 tests, 0 failures**.
+Current verified status: backend `clean verify` → **BUILD SUCCESS, 33 tests, 0 failures**; frontend
+`tsc -b` + `vite build` → **success**, Vitest → **11 tests, 0 failures**. The Compose stack was
+brought up and the ATS flow was exercised through nginx (register → upload → analyse).
 
 ---
 
@@ -197,16 +228,20 @@ Current verified status: backend `clean verify` → **BUILD SUCCESS, 26 tests, 0
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Tables, ERD, indexes, migrations, proposed schema |
 | [`docs/API.md`](docs/API.md) | REST endpoints, DTOs, errors, proposed endpoints |
 | [`docs/FEATURE_ROADMAP.md`](docs/FEATURE_ROADMAP.md) | Feature-by-feature plan with acceptance criteria |
-| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Setup, run, build, test, troubleshooting |
+| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Setup, run, Docker Compose, build, test, troubleshooting |
+| [`docs/COMPLETION_CHECKLIST.md`](docs/COMPLETION_CHECKLIST.md) | Remaining tasks, missing features and the go-live checklist for the full SaaS |
 | [`CAREERPILOT_MIGRATION_PLAN.md`](CAREERPILOT_MIGRATION_PLAN.md) | The upstream migration plan (proposed) |
 
 ---
 
 ## Project status and roadmap
 
-**Status:** a working MVP. The deterministic ATS checker, authentication, résumé management and
-dashboard are implemented and covered by characterisation tests. The AI hook exists as an interface
-but performs **no external calls**.
+**Status:** a working, containerised MVP. The deterministic ATS checker (with corrected extraction
+rules), authentication, résumé management, dashboard and a three-service Docker Compose deployment
+are implemented and verified. The AI hook exists as an interface but performs **no external calls**.
+The remaining product work — versioning, profile, catalog/matching, applications, CV editor/export,
+AI features, billing and operational hardening — is tracked feature by feature in
+[`docs/COMPLETION_CHECKLIST.md`](docs/COMPLETION_CHECKLIST.md).
 
 **Roadmap:** complete the deterministic foundation first (richer parsing → 10-dimension engine → CV
 versioning), then the career toolkit (profile, catalog, matching, applications, CV editor), and

@@ -33,6 +33,13 @@ graph LR
 Phase 0 (baseline guardrails, characterisation tests, `ApiError`, CI) is **already merged** in the
 repository (commit `86fbeeb`). Everything from Phase 1 onward is planned.
 
+**Baseline correction (2026-10-28).** A correctness pass fixed defects in the existing detectors that
+made the 7-dimension score wrong for common documents: technology lists were read as locations,
+numeric ids as phone numbers, "website" as a "BS" degree, `C++`/`C#` were never detected, `15+`
+metrics were never counted, and body-text mentions counted as sections. The characterisation tests
+were updated to the corrected values and extended with regression tests. The dimension weights,
+response contract and endpoint behaviour are unchanged.
+
 ---
 
 ## 1. Existing ATS checker — preserve and improve
@@ -267,11 +274,11 @@ existing endpoints remain additive.
 
 | Concern | Current | Planned |
 | --- | --- | --- |
-| Backend tests | 26 tests (5 classes) | engine/service/controller/integration suites per feature |
+| Backend tests | 33 tests (5 classes) | engine/service/controller/integration suites per feature |
 | Frontend tests | 11 Vitest tests | Component and integration suites for new modules |
 | CI | ✅ GitHub Actions (`ci.yml`) | unchanged, plus more coverage |
 | Security | BCrypt + JWT; CORS `*` + credentials; default JWT secret | scoped CORS; required `JWT_SECRET`; upload validation hardening |
-| Deployment | ❌ no Dockerfile/compose/deploy | documented topology; optional containerisation |
+| Deployment | ✅ Docker Compose (db + backend + frontend) | production pipeline, TLS, managed DB, backups, monitoring |
 | Monitoring | ❌ none | not in scope for the plan |
 
 **Description / benefit.** Verification keeps the deterministic engines trustworthy and the API
@@ -290,6 +297,8 @@ assertions; no cross-user data access; no secrets in logs.
 | Feature | Status | Priority | Phase |
 | --- | --- | --- | --- |
 | Baseline guardrails & tests | ✅ | P0 | 0 |
+| ATS detector correctness fixes + regression tests | ✅ | P0 | 0.1 |
+| Docker Compose stack (frontend/backend/database) | ✅ | P0 | 0.2 |
 | Taxonomy + structured parser + TXT | ⏳ | P0 | 1 |
 | 10-dimension explainable engine + keywords + grades | ⏳ | P0 | 2 |
 | CV versioning + re-scan | ⏳ | P0 | 3 |
