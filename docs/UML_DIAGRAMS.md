@@ -312,7 +312,7 @@ registration and JWT-validation sequences.
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as React page
+    participant UI as Angular page
     participant RC as ResumeController
     participant RSvc as ResumeServiceImpl
     participant PS as ResumeParserService
@@ -381,7 +381,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as React page
+    participant UI as Angular page
     participant Ctl as ResumeController (proposed)
     participant Svc as ResumeService (proposed)
     participant Eng as AtsEngine (proposed)
@@ -402,7 +402,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as React page
+    participant UI as Angular page
     participant Ctl as CopilotController (proposed)
     participant R as Retrieval (proposed)
     participant E as EmbeddingClient (proposed)
@@ -492,7 +492,7 @@ flowchart TD
 
 ```mermaid
 graph TD
-    subgraph Frontend["React app"]
+    subgraph Frontend["Angular app"]
         F_Router["Router + Guards"]
         F_Intercept["JWT Interceptor"]
         F_Services["Core services"]

@@ -1,0 +1,514 @@
+/* DO NOT CHANGE */
+@import "tailwindcss";
+@import "tw-animate-css";
+@custom-variant dark (&:is(.dark *));
+
+/* DO NOT CHANGE */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* CHANGE VALUES FOR THEME — CareerPilot minimalism: near-monochrome, precise radii */
+:root {
+  color-scheme: light;
+  --radius: 0.25rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.165 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.165 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.165 0 0);
+  --primary: oklch(0.165 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.972 0 0);
+  --secondary-foreground: oklch(0.25 0 0);
+  --muted: oklch(0.975 0 0);
+  --muted-foreground: oklch(0.515 0 0);
+  --accent: oklch(0.965 0 0);
+  --accent-foreground: oklch(0.21 0 0);
+  --destructive: oklch(0.55 0.185 26);
+  --border: oklch(0.902 0 0);
+  --input: oklch(0.902 0 0);
+  --ring: oklch(0.62 0 0);
+  /* Grayscale data ramp */
+  --chart-1: oklch(0.24 0 0);
+  --chart-2: oklch(0.42 0 0);
+  --chart-3: oklch(0.58 0 0);
+  --chart-4: oklch(0.72 0 0);
+  --chart-5: oklch(0.86 0 0);
+  /* Restrained semantic colours, used only for score states */
+  --success: oklch(0.51 0.088 156);
+  --warning: oklch(0.6 0.105 76);
+  --critical: oklch(0.53 0.165 27);
+  --sidebar: oklch(0.988 0 0);
+  --sidebar-foreground: oklch(0.165 0 0);
+  --sidebar-primary: oklch(0.165 0 0);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.965 0 0);
+  --sidebar-accent-foreground: oklch(0.21 0 0);
+  --sidebar-border: oklch(0.906 0 0);
+  --sidebar-ring: oklch(0.62 0 0);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.185 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.185 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.97 0 0);
+  --primary-foreground: oklch(0.185 0 0);
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.26 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.68 0.16 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.6 0 0);
+  --chart-1: oklch(0.9 0 0);
+  --chart-2: oklch(0.75 0 0);
+  --chart-3: oklch(0.62 0 0);
+  --chart-4: oklch(0.5 0 0);
+  --chart-5: oklch(0.38 0 0);
+  --success: oklch(0.72 0.1 156);
+  --warning: oklch(0.78 0.11 78);
+  --critical: oklch(0.7 0.15 27);
+  --sidebar: oklch(0.17 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.97 0 0);
+  --sidebar-primary-foreground: oklch(0.185 0 0);
+  --sidebar-accent: oklch(0.25 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.6 0 0);
+}
+
+/* CareerPilot additions: fonts, semantic tokens, minimal surface helpers */
+@theme inline {
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-critical: var(--critical);
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+  ::selection {
+    background: var(--foreground);
+    color: var(--background);
+  }
+}
+
+/* Subtle 1px grid used behind the landing page hero. */
+.cp-grid {
+  background-image:
+    linear-gradient(to right, var(--border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 20%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 20%, transparent 100%);
+}
+
+/* Thin divider used between stacked report sections. */
+.cp-rule {
+  border-top: 1px solid var(--border);
+}
+
+/* Smooth cross-fade between light and dark. The `theme-transition` class is
+   added to <html> by the theme toggle for the duration of the switch only, so
+   ordinary hover and motion transitions elsewhere are left untouched. */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    color 260ms ease,
+    fill 260ms ease,
+    stroke 260ms ease,
+    outline-color 260ms ease,
+    box-shadow 260ms ease !important;
+  transition-delay: 0ms !important;
+}
+
+/* The toggle keeps its own icon rotation while the palette cross-fades. */
+.theme-transition .theme-switch svg {
+  transition:
+    transform 300ms ease,
+    translate 300ms ease,
+    rotate 300ms ease,
+    scale 300ms ease,
+    color 260ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: none !important;
+  }
+}
+
+/* Landing page: the in-page nav links glide between sections, unless the
+   visitor asked for reduced motion. Each section carries `scroll-mt-*` so the
+   sticky header never covers the heading it just scrolled to. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Interactive feedback. Every enabled button — primary, ghost, select trigger,
+   dropdown trigger — responds to a press with a slight scale-down, and all of
+   them share one transition so the whole app feels like the same surface.
+   Transform-only and 120ms, so it never delays the click itself. */
+@media (prefers-reduced-motion: no-preference) {
+  button:not([disabled]) {
+    transition:
+      transform 120ms ease,
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      box-shadow 200ms ease;
+  }
+  button:not([disabled]):active {
+    transform: scale(0.985);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Custom element hosts.
+
+   Angular renders a component inside its selector element, and an unknown
+   element is an inline box by default. That makes layout and, more subtly,
+   IntersectionObserver geometry depend on inline fragments, which can leave
+   elements reported as not intersecting and therefore never animate in.
+   Page and surface hosts are block-level; the few that just wrap a button, a
+   dialog or a fixed overlay use contents/inline-block so the design is
+   unchanged.
+   ------------------------------------------------------------------------ */
+app-root,
+app-shell,
+app-landing-page,
+app-auth-page,
+app-dashboard-page,
+app-my-cv-page,
+app-cv-analysis-page,
+app-compare-page,
+app-profile-page,
+app-settings-page,
+app-not-found-page,
+app-coming-soon-page,
+app-panel,
+app-stat-tile,
+app-page-header,
+app-planned-features,
+app-severity-summary,
+app-issue-list,
+app-dimension-bars,
+app-score-dial,
+app-score-trend,
+app-accordion,
+app-alert,
+app-tilt3d,
+app-scroll-progress {
+  display: block;
+}
+
+app-brand,
+app-theme-toggle,
+app-dropdown,
+app-pin-container {
+  display: inline-block;
+}
+
+/* These hosts add no box of their own: their child dialog/overlay and, for the
+   upload dialog, the trigger button participate directly in the parent layout. */
+app-coming-soon-dialog,
+app-toast-container,
+app-cv-upload-dialog,
+app-alert-title,
+app-alert-description {
+  display: contents;
+}
+
+/* ---------------------------------------------------------------------------
+   Angular ports of the framer-motion primitives. Everything is opacity and
+   transform only, so the work stays on the compositor, and every effect is
+   disabled for visitors who asked for reduced motion.
+   ------------------------------------------------------------------------ */
+
+/* Scroll reveal (Reveal directive / stagger containers). */
+.cp-reveal {
+  opacity: 0;
+  transform: translateY(var(--cp-reveal-distance, 18px));
+  transition:
+    opacity 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--cp-reveal-delay, 0ms);
+}
+.cp-reveal.cp-reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Route change entrance used by the app shell. */
+@keyframes cp-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cp-page-enter {
+  animation: cp-page-enter 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Bar fills and the score ring draw in from empty on first paint. */
+.cp-bar-fill {
+  transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cp-dial-ring {
+  transition: stroke-dashoffset 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes cp-draw-line {
+  from {
+    stroke-dashoffset: 1200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.cp-trend-line {
+  stroke-dasharray: 1200;
+  animation: cp-draw-line 1100ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Tilt3DStage: the pointer position drives two CSS variables on the stage, the
+   card interpolates them, and hover adds the lift/scale. */
+.cp-tilt-stage {
+  perspective: var(--cp-tilt-perspective, 1200px);
+}
+.cp-tilt-card {
+  transform: rotateX(var(--cp-tilt-x, 0deg)) rotateY(var(--cp-tilt-y, 0deg))
+    translateZ(var(--cp-tilt-lift, 0px)) scale(var(--cp-tilt-scale, 1));
+  transform-style: preserve-3d;
+  transition: transform 220ms ease-out;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .cp-tilt-stage:hover .cp-tilt-card {
+    --cp-tilt-lift: var(--cp-tilt-hover-lift, 28px);
+    --cp-tilt-scale: var(--cp-tilt-hover-scale, 1.012);
+  }
+  .cp-tilt-float {
+    animation: cp-float 7s ease-in-out infinite;
+  }
+}
+@keyframes cp-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(calc(var(--cp-tilt-float, 6px) * -1));
+  }
+}
+
+/* Pin card rings expanding on the perspective plane. */
+@keyframes cp-pin-ring {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+.cp-pin-ring {
+  opacity: 0;
+  animation: cp-pin-ring 6s infinite;
+}
+
+/* Word-by-word text reveal. */
+.cp-word {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(10px);
+  transition:
+    opacity 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--cp-word-delay, 0ms);
+}
+.cp-words-visible .cp-word {
+  opacity: 1;
+  filter: blur(0);
+}
+
+/* Native modal dialogs: Radix-compatible backdrop, centring and entrance. */
+dialog.cp-modal {
+  margin: auto;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: calc(100% - 2rem);
+  max-width: 32rem;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+dialog.cp-modal::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+dialog.cp-modal[open] {
+  animation: cp-modal-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes cp-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Left navigation drawer. */
+dialog.cp-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  margin: 0;
+  height: 100%;
+  max-height: 100%;
+  width: 280px;
+  max-width: 85vw;
+  border: 0;
+  border-right: 1px solid var(--sidebar-border);
+  background: var(--sidebar);
+  color: var(--sidebar-foreground);
+  padding: 0;
+}
+dialog.cp-drawer::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+dialog.cp-drawer[open] {
+  animation: cp-drawer-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes cp-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* Toasts slide up from the corner. */
+@keyframes cp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cp-toast {
+  animation: cp-toast-in 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-reveal,
+  .cp-word {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .cp-page-enter,
+  .cp-trend-line,
+  .cp-toast,
+  dialog.cp-modal[open],
+  dialog.cp-drawer[open] {
+    animation: none;
+  }
+  .cp-bar-fill,
+  .cp-dial-ring,
+  .cp-tilt-card {
+    transition: none;
+  }
+  .cp-tilt-card {
+    transform: none;
+  }
+}

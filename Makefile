@@ -10,7 +10,7 @@ help:
 		'Local development:' \
 		'  make install     Install frontend dependencies' \
 		'  make backend     Start the Spring Boot backend on port 8080 (needs JDK 21)' \
-		'  make frontend    Start the React frontend on port 5173 (proxies /api to :8080)' \
+		'  make frontend    Start the Angular frontend on port 5173 (proxies /api to :8080)' \
 		'  make run         Start the backend and frontend together' \
 		'  make build       Build both applications' \
 		'  make test        Run backend and frontend tests' \

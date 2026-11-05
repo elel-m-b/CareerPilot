@@ -135,7 +135,7 @@ class DeterministicAnalyzerTest {
                 .location("Casablanca, Morocco")
                 .detectedSections(Set.of("SUMMARY", "EXPERIENCE", "EDUCATION", "SKILLS", "PROJECTS"))
                 .skills(List.of("java", "spring boot", "sql", "docker", "aws", "git",
-                        "react", "python", "rest api", "kubernetes", "linux", "junit"))
+                        "Angular", "python", "rest api", "kubernetes", "linux", "junit"))
                 .actionVerbsFound(List.of("built", "developed", "implemented", "reduced",
                         "designed", "deployed", "led", "improved"))
                 .quantifiableMetricCount(5)

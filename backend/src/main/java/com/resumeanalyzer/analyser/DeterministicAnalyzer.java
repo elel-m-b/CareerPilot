@@ -232,7 +232,7 @@ public class DeterministicAnalyzer {
             recs.add(Recommendation.builder()
                     .category("Skills")
                     .priority("Important")
-                    .message("Expand skill density: Add relevant technical frameworks, tools, and methodologies (e.g. Docker, CI/CD, React, Spring Boot) to increase ATS keyword matching.")
+                    .message("Expand skill density: Add relevant technical frameworks, tools, and methodologies (e.g. Docker, CI/CD, Angular, Spring Boot) to increase ATS keyword matching.")
                     .build());
         }
 

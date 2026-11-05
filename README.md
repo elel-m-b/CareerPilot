@@ -4,10 +4,6 @@
 System (ATS) does.** It extracts text from an uploaded PDF or DOCX, measures the document across
 seven weighted dimensions, and returns a numeric score, per-section feedback and a prioritised list
 of improvements.
-
-Built with a **Spring Boot (Java 21)** REST backend and a **React 19 + TypeScript + Vite** frontend (ported from
-`career-compass`), secured with JWT.
-
 ---
 
 ## Objectives
@@ -22,7 +18,7 @@ Built with a **Spring Boot (Java 21)** REST backend and a **React 19 + TypeScrip
 ## Current features (implemented)
 
 - **Accounts & auth:** email/password registration and login, BCrypt hashing, stateless JWT, protected
-  React routes.
+  Angular routes.
 - **Résumé management:** upload **PDF/DOCX** (max 10 MB), server-side extraction with Apache PDFBox
   and Apache POI, list, view (metadata + extracted text), delete.
 - **Deterministic ATS analysis:** a **7-dimension** engine (ATS compatibility 20%, content quality
@@ -39,7 +35,7 @@ Built with a **Spring Boot (Java 21)** REST backend and a **React 19 + TypeScrip
 
 ## Frontend: Career-Compass integration
 
-The complete Career-Compass frontend (React 19, Tailwind v4, shadcn/ui) now lives in `frontend/` and talks
+The complete Career-Compass frontend (Angular 19, Tailwind v4, shadcn/ui) now lives in `frontend/` and talks
 to the existing Spring Boot API. Every screen from the reference is routed and present in the sidebar; the
 ones whose backend APIs do not exist yet show **"Coming Soon — This feature is not implemented yet"**
 rather than empty states or fake data.
@@ -81,7 +77,7 @@ criteria per feature.
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | **React 19** + **TypeScript**, **Vite 7**, **Tailwind CSS v4**, shadcn/ui (Radix), Framer Motion, React Router 7, Vitest |
+| Frontend | **Angular 19** + **TypeScript**, **Vite 7**, **Tailwind CSS v4**, shadcn/ui (Radix), Framer Motion, Angular Router 7, Vitest |
 | Backend | **Java 21**, **Spring Boot 3.3.5** (Web, Data JPA, Security, Validation), Maven |
 | Security | Spring Security 6, JJWT 0.12.6, BCrypt |
 | Database | **H2** in-memory (dev) / **MySQL** (prod) via Spring Data JPA + Hibernate |
@@ -97,7 +93,7 @@ The database technology was determined from the configuration, not assumed: `app
 
 ```mermaid
 graph TD
-    SPA["React 19 SPA<br/>(localhost:5173)"]
+    SPA["Angular 19 SPA<br/>(localhost:5173)"]
     API["Spring Boot 3 REST API<br/>(localhost:8080) · /api"]
     DB[("H2 (dev) / MySQL (prod)")]
     AI["AI provider<br/>(interface only — no-op stub today)"]
@@ -123,7 +119,7 @@ CareerPilot/
 │       ├── controller/  service/  repository/  entity/  dto/
 │       ├── parser/      analyser/  security/    config/  exception/  common/
 │       └── resources/   application*.yml · db/migration/
-├── frontend/                   React 19 SPA (Vite)
+├── frontend/                   Angular 19 SPA (Vite)
 │   ├── Dockerfile              node build → nginx web server
 │   ├── nginx.conf              SPA fallback + /api reverse proxy
 │   └── src/  api/ (REST client) · components/ · hooks/ · lib/ · pages/
@@ -152,7 +148,7 @@ Run these from the `CareerPilot/` directory.
 # 1. Backend (Spring Boot, port 8080) — uses in-memory H2 in the default dev profile
 mvn -f backend/pom.xml clean spring-boot:run
 
-# 2. Frontend (React/Vite, port 5173 — proxies /api to :8080)
+# 2. Frontend (Angular/Vite, port 5173 — proxies /api to :8080)
 npm --prefix frontend install
 npm --prefix frontend run dev
 ```

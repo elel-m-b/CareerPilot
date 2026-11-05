@@ -71,7 +71,7 @@ class ResumeParserServiceTest {
         List<String> skills = parsed.getSkills();
         assertEquals(18, skills.size());
         assertTrue(skills.containsAll(
-                List.of("java", "spring boot", "postgresql", "docker", "react", "junit")));
+                List.of("java", "spring boot", "postgresql", "docker", "Angular", "junit")));
 
         assertTrue(parsed.getActionVerbsFound().containsAll(List.of("built", "developed", "implemented", "reduced")));
         assertEquals(4, parsed.getActionVerbsFound().size());
@@ -115,7 +115,7 @@ class ResumeParserServiceTest {
 
     @Test
     void technologyListIsNotMistakenForLocation() {
-        ParsedResume parsed = parser.parseText("Skills: Java, Spring Boot, React, Docker");
+        ParsedResume parsed = parser.parseText("Skills: Java, Spring Boot, Angular, Docker");
 
         assertNull(parsed.getLocation(), "a comma-separated tech list is not a city/country");
         assertTrue(parsed.getDetectedSections().contains("SKILLS"));

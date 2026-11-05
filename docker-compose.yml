@@ -53,7 +53,7 @@ services:
     ports:
       - "${BACKEND_PORT:-8080}:8080"
 
-  # Web server: nginx serves the built React SPA and proxies /api to the backend.
+  # Web server: nginx serves the built Angular SPA and proxies /api to the backend.
   frontend:
     build:
       context: ./frontend

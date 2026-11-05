@@ -42,7 +42,7 @@ public class ResumeParserService {
             Pattern.CASE_INSENSITIVE);
 
     private static final List<String> COMMON_SKILLS = List.of(
-            "java", "spring", "spring boot", "react", "javascript", "typescript", "html", "css", "sql", "mysql",
+            "java", "spring", "spring boot", "Angular", "javascript", "typescript", "html", "css", "sql", "mysql",
             "postgresql", "mongodb", "docker", "kubernetes", "aws", "azure", "gcp", "git", "github", "gitlab",
             "rest", "rest api", "microservices", "python", "c++", "c#", "node.js", "express", "tailwind", "bootstrap",
             "unit testing", "junit", "mockito", "ci/cd", "agile", "scrum", "jira", "communication", "leadership",

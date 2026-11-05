@@ -8,7 +8,7 @@ Final year computer science student at ENSIAS looking for a backend internship. 
 
 TECHNICAL SKILLS
 Languages: Java, Python, JavaScript, SQL
-Frameworks: Spring Boot, Node.js, React, Express
+Frameworks: Spring Boot, Node.js, Angular, Express
 Databases: PostgreSQL, MySQL, Redis
 DevOps & tools: Docker, Git, GitHub Actions, Linux
 Testing: JUnit, Jest
@@ -27,9 +27,9 @@ Campus Marketplace API
 Technologies: Java, Spring Boot, PostgreSQL, Redis, Docker
 
 Library Management System
-- Developed a full stack application with React and Node.js used by 120 students during the semester.
+- Developed a full stack application with Angular and Node.js used by 120 students during the semester.
 - Automated the borrowing workflow and saved the library staff about 6 hours per week.
-Technologies: React, Node.js, Express, MySQL
+Technologies: Angular, Node.js, Express, MySQL
 
 INTERNSHIP EXPERIENCE
 Backend Intern - Atlas Digital, Casablanca

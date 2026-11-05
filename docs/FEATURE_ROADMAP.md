@@ -76,7 +76,7 @@ inputs; response gains additive fields.
 **Acceptance criteria:** weights sum to 100; `overallScore` equals the weighted average (asserted);
 deterministic; a structured CV scores strictly higher than an unstructured one; missing email → a
 `critical` contact issue; missing metrics → a `warning` impact issue; existing `GET /api/analyses/{id}`
-still deserialises in the React client.
+still deserialises in the Angular client.
 
 ---
 
@@ -206,7 +206,7 @@ passages; no secrets or document text in logs.
 
 **Status: ✅ Implemented (JWT); the reference's OTP/guest auth is deliberately **not** migrated.**
 
-**Description / benefit.** Email/password registration and login; stateless JWT; protected React
+**Description / benefit.** Email/password registration and login; stateless JWT; protected Angular
 routes.
 
 **What exists:** `AuthController`, `AuthServiceImpl` (BCrypt, `AuthenticationManager`),

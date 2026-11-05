@@ -9,14 +9,14 @@
 
 ## 1. High-level architecture (current)
 
-CareerPilot is a classic two-tier web application: a React single-page application talks to a
+CareerPilot is a classic two-tier web application: a Angular single-page application talks to a
 Spring Boot REST API over HTTP/JSON, and the API persists to a relational database through JPA. A
 stateless JWT secures every endpoint except registration and login.
 
 ```mermaid
 graph TD
     subgraph Client["Browser"]
-        SPA["React 19 SPA<br/>(localhost:5173)"]
+        SPA["Angular 19 SPA<br/>(localhost:5173)"]
     end
 
     subgraph Server["Spring Boot 3.3.5 · Java 21 (localhost:8080)"]
@@ -53,7 +53,7 @@ graph TD
 | PDF parsing | Apache PDFBox 3.0.3 | `parser/PdfResumeParser.java` |
 | DOCX parsing | Apache POI 5.3.0 (`poi-ooxml`) | `parser/DocxResumeParser.java` |
 | Boilerplate | Lombok | `backend/pom.xml` |
-| Frontend | React 19, TypeScript 5.9, Vite 7, Tailwind CSS v4, React Router 7 | `frontend/package.json` |
+| Frontend | Angular 19, TypeScript 5.9, Vite 7, Tailwind CSS v4, Angular Router 7 | `frontend/package.json` |
 | Frontend tests | Vitest | `frontend/package.json`, `frontend/vitest.config.ts` |
 
 ---
@@ -224,7 +224,7 @@ keys exist in `application.yml` but are only read to log a message. **No AI proc
 
 ## 3. Frontend architecture (current)
 
-React 19 with TypeScript, Vite and Tailwind CSS v4. The UI is the Career-Compass frontend, ported
+Angular 19 with TypeScript, Vite and Tailwind CSS v4. The UI is the Career-Compass frontend, ported
 into `frontend/` and pointed at the existing Spring Boot API. State is request/response: a small
 `useResource` hook fetches, pages re-fetch after mutations, and the JWT lives in `localStorage`.
 
@@ -316,7 +316,7 @@ from a different origin.
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as React page
+    participant C as Angular page
     participant S as api/client.ts
     participant I as use-auth (token owner)
     participant F as JwtAuthenticationFilter
@@ -352,7 +352,7 @@ The interceptor (`core/interceptors/jwt.interceptor.ts`) attaches the bearer tok
 sequenceDiagram
     autonumber
     participant U as User
-    participant UI as React page
+    participant UI as Angular page
     participant A as AuthController
     participant AS as AuthServiceImpl
     participant AM as AuthenticationManager
@@ -379,7 +379,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as React page
+    participant UI as Angular page
     participant F as JwtAuthenticationFilter
     participant TP as JwtTokenProvider
     participant CU as CustomUserDetailsService
@@ -601,7 +601,7 @@ engines are added first; AI-dependent layers last, always behind an interface wi
 
 ```mermaid
 graph TD
-    SPA["React SPA<br/>dashboard · cv · cv-editor · jobs<br/>applications · profile · prep · roadmap · copilot"]
+    SPA["Angular SPA<br/>dashboard · cv · cv-editor · jobs<br/>applications · profile · prep · roadmap · copilot"]
     API["Spring Boot 3 REST API /api<br/>security(JWT) · error contract · validation"]
     CTRL["Controllers → Services (tx, ownership, orchestration)"]
     ENG["Pure deterministic engines<br/>AtsEngine · JobMatcher · CvImprover<br/>InterviewPlanner · SkillGap · Retrieval · Grounding"]

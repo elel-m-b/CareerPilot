@@ -33,7 +33,7 @@ CareerPilot/
 │       ├── main/java/com/resumeanalyzer/   controllers, services, entities, …
 │       ├── main/resources/                 application*.yml, db/migration/*
 │       └── test/                           JUnit tests + fixtures
-├── frontend/                   React 19 SPA (Vite + Tailwind)
+├── frontend/                   Angular 19 SPA (Vite + Tailwind)
 │   ├── Dockerfile              node build → nginx web server
 │   ├── nginx.conf              SPA fallback + /api proxy
 │   ├── package.json
@@ -100,7 +100,7 @@ Override the target with `VITE_API_PROXY_TARGET`, or point the built SPA at an a
 
 ---
 
-## 4. Run the React frontend
+## 4. Run the Angular frontend
 
 ```bash
 cd CareerPilot

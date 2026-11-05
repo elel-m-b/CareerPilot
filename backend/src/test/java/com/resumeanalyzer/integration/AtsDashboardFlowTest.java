@@ -106,7 +106,7 @@ class AtsDashboardFlowTest {
                     "EDUCATION",
                     "Bachelor of Science in Computer Science",
                     "SKILLS",
-                    "Java, Spring Boot, PostgreSQL, Docker, React, JUnit",
+                    "Java, Spring Boot, PostgreSQL, Docker, Angular, JUnit",
                     "PROJECTS",
                     "github.com/yasmine/pipeline",
                     "CERTIFICATIONS",

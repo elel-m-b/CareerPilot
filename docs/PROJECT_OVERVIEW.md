@@ -108,7 +108,7 @@ The following are backed by real code paths in this repository.
 ## 4. Planned features (from the migration roadmap — **not implemented**)
 
 CareerPilot intends to reach feature parity with the reference project `career-compass` (a
-Vite/React/Convex prototype) while keeping **Java + Spring Boot as the core backend**. The full plan,
+Vite/Angular/Convex prototype) while keeping **Java + Spring Boot as the core backend**. The full plan,
 including phases, acceptance criteria and commit order, is in
 [`CAREERPILOT_MIGRATION_PLAN.md`](../CAREERPILOT_MIGRATION_PLAN.md). Detailed feature breakdowns are in
 [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md).
@@ -168,7 +168,7 @@ deterministic result when no API key is configured.
 ## 6. Reference project
 
 `career-compass` (sibling directory) is a **read-only reference** for target functionality, UI design
-and algorithm intent. It is built on Vite + React 19 + TypeScript + Convex and is **not** part of the
+and algorithm intent. It is built on Vite + Angular 19 + TypeScript + Convex and is **not** part of the
 CareerPilot build. Its behaviour is described (with file-level citations) in §2.2 of the migration
 plan. No code is copied from it; algorithms are re-implemented in Java.
 
